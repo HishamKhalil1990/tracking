@@ -1,20 +1,61 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import 'react-native-gesture-handler';
+import {NavigationContainer} from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
+ 
+// Import Screens
+import LoginScreen from './Screen/LoginScreen';
+import RegisterScreen from './Screen/RegisterScreen';
+import DrawerNavigationRoutes from './Screen/DrawerNavigationRoutes';
 
-export default function App() {
+import theme from './utils/theme';
+ 
+const Stack = createStackNavigator();
+ 
+const Auth = () => {
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <Stack.Navigator initialRouteName="LoginScreen">
+      <Stack.Screen
+        name="LoginScreen"
+        component={LoginScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="RegisterScreen"
+        component={RegisterScreen}
+        options={{
+          title: 'Register', //Set Header Title
+          headerStyle: {
+            backgroundColor: theme.colors.general, //Set Header color
+          },
+          headerTintColor: '#fff', //Set Header text color
+          headerTitleStyle: {
+            fontWeight: 'bold', //Set Header text style
+          },
+        }}
+      />
+    </Stack.Navigator>
   );
-}
+};
+ 
+const App = () => {
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Auth">
+        <Stack.Screen
+          name="Auth"
+          component={Auth}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="DrawerNavigationRoutes"
+          component={DrawerNavigationRoutes}
+          options={{headerShown: false}}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+ 
+export default App;
