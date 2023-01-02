@@ -18,10 +18,12 @@ import theme from "../utils/theme";
 const LoginScreen = ({ navigation }) => {
   const [userName, setUserName] = useState("");
   const [userPassword, setUserPassword] = useState("");
+  const [userOdometer, setUserOdometer] = useState("");
   const [loading, setLoading] = useState(false);
   const [errortext, setErrortext] = useState("");
 
   const passwordInputRef = createRef();
+  const userOdometerRef = createRef();
 
   useEffect(() => {
     const checkStorage = async () => {
@@ -37,15 +39,16 @@ const LoginScreen = ({ navigation }) => {
     setErrortext("");
     if (!userName) {
       alert("Please fill Username");
-      return;
     }
     if (!userPassword) {
       alert("Please fill Password");
-      return;
+    }
+    if (!userOdometer) {
+      alert("Please fill Odometer");
     }
     setLoading(true);
     api
-      .checkUser(userName, userPassword)
+      .checkUser(userName, userPassword, userOdometer)
       .then((response) => {
         //Hide Loader
         setLoading(false);
@@ -102,7 +105,7 @@ const LoginScreen = ({ navigation }) => {
               <TextInput
                 style={styles.inputStyle}
                 onChangeText={(UserName) => setUserName(UserName)}
-                placeholder="Enter Username" //dummy@abc.com
+                placeholder="Enter Username"
                 placeholderTextColor="#8b9cb5"
                 autoCapitalize="none"
                 returnKeyType="next"
@@ -117,10 +120,26 @@ const LoginScreen = ({ navigation }) => {
               <TextInput
                 style={styles.inputStyle}
                 onChangeText={(UserPassword) => setUserPassword(UserPassword)}
-                placeholder="Enter Password" //12345
+                placeholder="Enter Password"
                 placeholderTextColor="#8b9cb5"
-                keyboardType="default"
+                autoCapitalize="none"
+                returnKeyType="next"
                 ref={passwordInputRef}
+                onSubmitEditing={() =>
+                  userOdometerRef.current && userOdometerRef.current.focus()
+                }
+                underlineColorAndroid="#f000"
+                blurOnSubmit={false}
+              />
+            </View>
+            <View style={styles.SectionStyle}>
+              <TextInput
+                style={styles.inputStyle}
+                onChangeText={(UserOdometer) => setUserOdometer(UserOdometer)}
+                placeholder="Enter Odometer"
+                placeholderTextColor="#8b9cb5"
+                keyboardType="number-pad"
+                ref={userOdometerRef}
                 onSubmitEditing={Keyboard.dismiss}
                 blurOnSubmit={false}
                 secureTextEntry={true}
@@ -138,12 +157,6 @@ const LoginScreen = ({ navigation }) => {
             >
               <Text style={styles.buttonTextStyle}>LOGIN</Text>
             </TouchableOpacity>
-            <Text
-              style={styles.registerTextStyle}
-              onPress={() => navigation.navigate("RegisterScreen")}
-            >
-              New Here ? Register
-            </Text>
           </KeyboardAvoidingView>
         </View>
       </ScrollView>

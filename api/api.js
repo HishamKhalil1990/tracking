@@ -1,14 +1,14 @@
 import axios from "axios";
 const baseURL = "http://localhost:3333";
 
-const checkUser = async (username, password) => {
-  let data = { username, password };
+const checkUser = async (username, password, odometer) => {
+  let data = { username, password, odometer };
   return new Promise((resolve, reject) => {
     try {
       axios({
         baseURL,
         method: "post",
-        url: "/check-supervisor-user",
+        url: "/login",
         headers: {
           "Content-Type": "application/json",
         },
