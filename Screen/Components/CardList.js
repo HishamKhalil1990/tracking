@@ -21,7 +21,7 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders }) => {
     return (
         <FlatList 
             style={{
-                width:0.9*windowWidth,
+                width:windowWidth,
             }}
             data={data}
             renderItem={renderItem}

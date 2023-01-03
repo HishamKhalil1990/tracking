@@ -4,10 +4,14 @@
 // Import React and Component
 import { useEffect, useState } from "react";
 import { View, Text, SafeAreaView } from "react-native";
+import 'react-native-gesture-handler';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {createStackNavigator} from '@react-navigation/stack';
 import api from "../../api/api";
 import CardList from "../Components/CardList";
 import Loader from "../Components/Loader";
+
+const Stack = createStackNavigator()
 
 const HomeScreen = ({ navigation }) => {
   const [token, setToken] = useState("");
@@ -59,7 +63,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [token]);
 
-  const showData = () => {
+  const Cards = () => {
     return (
       <CardList
         data={data}
@@ -70,19 +74,45 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1, padding: 16 }}>
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <View>{isLoading ? <Loader loading={isLoading} /> : showData()}</View>
-        </View>
+  const Detail = () => {
+    return(
+      <View>
+        <Text>
+          detail
+        </Text>
       </View>
+    )
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, }}>
+      {isLoading?
+        <View style={{ flex: 1, padding: 16 }}>
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <View><Loader loading={isLoading} /></View>
+          </View>
+        </View>
+      :
+        <Stack.Navigator initialRouteName="cards" screenOptions={{
+          cardStyle:{flex:1,alignItems: "center",justifyContent: "center",}
+        }}>
+          <Stack.Screen
+            name="cards"
+            component={Cards}
+            options={{headerShown: false,}}
+          />
+          <Stack.Screen
+            name="detail"
+            component={Detail}
+          />
+      </Stack.Navigator>
+      }
     </SafeAreaView>
   );
 };

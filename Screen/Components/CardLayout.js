@@ -6,28 +6,34 @@ export default CardLayout = ({ record }) => {
     return (
         <View
             style={{
-                width:'95%',
-                paddingTop:15,
-                paddingBottom:15,
-                backgroundColor: theme.colors.general,
-                marginBottom:25,
-                borderRadius:25,
-                flex:1,
-                justifyContent:'center'
-            }}
-        >
-            <Text style={styles.text}>
-                name: {record.name}
-            </Text>
-            <Text style={styles.text}>
-                description: {record.description}
-            </Text>
-            <Text style={styles.text}>
-                long: {record.destination.long}
-            </Text>
-            <Text style={styles.text}>
-                lat: {record.destination.lat}
-            </Text>
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingTop:30,
+            }}>
+            <View
+                style={{
+                    width:'85%',
+                    paddingBottom:15,
+                    backgroundColor: theme.colors.general,
+                    borderRadius:25,
+                    flex:1,
+                    justifyContent:'center'
+                }}
+            >
+                <Text style={styles.text}>
+                    name: {record.name}
+                </Text>
+                <Text style={styles.text}>
+                    description: {record.description}
+                </Text>
+                <Text style={styles.text}>
+                    long: {record.destination.long}
+                </Text>
+                <Text style={styles.text}>
+                    lat: {record.destination.lat}
+                </Text>
+            </View>
         </View>
     )
 }
