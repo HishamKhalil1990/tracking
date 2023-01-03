@@ -9,35 +9,37 @@ import api from "../../api/api";
 import CardList from "../Components/CardList";
 import Loader from "../Components/Loader";
 
-const HomeScreen = () => {
-  const [cardCode, setCardCode] = useState("");
+const HomeScreen = ({ navigation }) => {
+  const [token, setToken] = useState("");
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getUserOrders = async (cardcode) => {
+  const getUserOrders = async (token) => {
     api
-      .getOrders(cardcode)
+      .getOrders(token)
       .then((results) => {
         setIsLoading(false);
         if (results.status == "success") {
-          if (results.orders.length > 0) {
-            alert("updated");
+          if (results.data.length > 0) {
+            alert("تم التحديث");
           } else {
-            alert("no open orders");
+            alert("لا يوجد طلبيات");
           }
-          setData(results.orders);
-        } else {
+          setData(results.data);
+        } else if (results.status == "unauthorized"){
+          AsyncStorage.clear()
           alert(
-            "could not update due to server shutdown, please try again later"
+            "انتهت الجلسة الرجاء اعادة الدخول مرة اخرى"
           );
+          navigation.replace('Auth')
         }
       })
       .catch((num) => {
         setIsLoading(false);
         if (num == 1) {
-          alert("somthing wrong happened ! please try again");
+          alert("حدث خطا ما الرجاء المحاولة مرة اخرى");
         } else {
-          alert("Please check internet");
+          alert("الرجاء التاكد من الاتصال بالانترنت");
         }
       });
   };
@@ -46,22 +48,22 @@ const HomeScreen = () => {
     const checkStorage = async () => {
       let user = await AsyncStorage.getItem("user");
       user = JSON.parse(user);
-      setCardCode(user.cardcode);
+      setToken(user.token);
     };
     checkStorage();
   }, []);
 
   useEffect(() => {
-    if (cardCode != "") {
-      getUserOrders(cardCode);
+    if (token != "") {
+      getUserOrders(token);
     }
-  }, [cardCode]);
+  }, [token]);
 
   const showData = () => {
     return (
       <CardList
         data={data}
-        cardCode={cardCode}
+        token={token}
         setIsLoading={setIsLoading}
         getUserOrders={getUserOrders}
       />

@@ -5,11 +5,11 @@ import { useState } from "react";
 
 const windowWidth = Dimensions.get('window').width;
 
-export default CardList = ({ data, cardCode, setIsLoading, getUserOrders }) => {
+export default CardList = ({ data, token, setIsLoading, getUserOrders }) => {
     const [refreshing, setRefreshing] = useState(false)
     const refresh = () => {
         setIsLoading(true)
-        getUserOrders(cardCode)
+        getUserOrders(token)
     }
 
     const renderItem = ({item}) => {
@@ -25,7 +25,7 @@ export default CardList = ({ data, cardCode, setIsLoading, getUserOrders }) => {
             }}
             data={data}
             renderItem={renderItem}
-            keyExtractor={item => item.APPNO}
+            keyExtractor={item => item.name}
             refreshControl={
                 <RefreshControl
                     refreshing={refreshing}

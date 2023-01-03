@@ -17,22 +17,16 @@ export default CardLayout = ({ record }) => {
             }}
         >
             <Text style={styles.text}>
-                No.: {record.APPNO}
+                name: {record.name}
             </Text>
             <Text style={styles.text}>
-                Card Name: {record.CardName}
+                description: {record.description}
             </Text>
             <Text style={styles.text}>
-                City: {record.City}
+                long: {record.destination.long}
             </Text>
             <Text style={styles.text}>
-                Phone: {record.Phone}
-            </Text>
-            <Text style={styles.text}>
-                Name: {record.Name}
-            </Text>
-            <Text style={styles.text}>
-                Amount: {record.DocTotal}
+                lat: {record.destination.lat}
             </Text>
         </View>
     )

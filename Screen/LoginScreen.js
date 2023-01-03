@@ -39,42 +39,47 @@ const LoginScreen = ({ navigation }) => {
     setErrortext("");
     if (!userName) {
       alert("Please fill Username");
+      return
     }
     if (!userPassword) {
       alert("Please fill Password");
+      return
     }
     if (!userOdometer) {
       alert("Please fill Odometer");
+      return
     }
-    setLoading(true);
-    api
-      .checkUser(userName, userPassword, userOdometer)
-      .then((response) => {
-        //Hide Loader
-        setLoading(false);
-        // If server response message same as Data Matched
-        if (response.status === "success") {
-          AsyncStorage.setItem(
-            "user",
-            JSON.stringify({
-              username: response.data.username,
-              cardcode: response.data.cardcode,
-            })
-          );
-          navigation.replace("DrawerNavigationRoutes");
-        } else {
-          setErrortext("Please check your username or password");
-        }
-      })
-      .catch((num) => {
-        //Hide Loader
-        setLoading(false);
-        if (num == 1) {
-          setErrortext("somthing wrong happened ! please try again");
-        } else {
-          setErrortext("Please check internet");
-        }
-      });
+    if(userName && userPassword && userOdometer){
+      setLoading(true);
+      api
+        .checkUser(userName, userPassword, userOdometer)
+        .then((response) => {
+          //Hide Loader
+          setLoading(false);
+          // If server response message same as Data Matched
+          if (response.status === "success") {
+            AsyncStorage.setItem(
+              "user",
+              JSON.stringify({
+                token:response.auth.token,
+                username:userName
+              })
+            );
+            navigation.replace("DrawerNavigationRoutes");
+          } else {
+            setErrortext(response.msg);
+          }
+        })
+        .catch((num) => {
+          //Hide Loader
+          setLoading(false);
+          if (num == 1) {
+            setErrortext("حدث خطا ما الرجاء المحاولة مرة اخرى");
+          } else {
+            setErrortext("الرجاء التاكد من الاتصال بالانترنت");
+          }
+        });
+    }
   };
 
   return (
@@ -124,6 +129,7 @@ const LoginScreen = ({ navigation }) => {
                 placeholderTextColor="#8b9cb5"
                 autoCapitalize="none"
                 returnKeyType="next"
+                secureTextEntry={true}
                 ref={passwordInputRef}
                 onSubmitEditing={() =>
                   userOdometerRef.current && userOdometerRef.current.focus()
@@ -142,7 +148,6 @@ const LoginScreen = ({ navigation }) => {
                 ref={userOdometerRef}
                 onSubmitEditing={Keyboard.dismiss}
                 blurOnSubmit={false}
-                secureTextEntry={true}
                 underlineColorAndroid="#f000"
                 returnKeyType="next"
               />
