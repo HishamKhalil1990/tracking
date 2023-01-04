@@ -1,6 +1,6 @@
 export default theme = {
     colors:{
-        general:"#BFEAF5",
+        general:"#7FBCD2",
 
     }
 }
