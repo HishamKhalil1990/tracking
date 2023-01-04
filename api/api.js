@@ -52,7 +52,33 @@ const getOrders = async (token) => {
   });
 };
 
+const send = async (token,status) => {
+  return new Promise((resolve, reject) => {
+    try {
+      axios({
+        baseURL,
+        method: "post",
+        url: `/status/${status}`,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      })
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          reject(1);
+        });
+    } catch (err) {
+      reject(2);
+    }
+  });
+};
+
 export default {
   checkUser,
   getOrders,
+  send
 };

@@ -78,19 +78,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, }}>
-      {isLoading?
-        <View style={{ flex: 1, padding: 16 }}>
-          <View
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <View><Loader loading={isLoading} /></View>
-          </View>
-        </View>
-      :
+      <Loader loading={isLoading} />
         <Stack.Navigator initialRouteName="cards" screenOptions={{
           // cardStyle:{flex:1,alignItems: "center",justifyContent: "center",}
         }}>
@@ -106,7 +94,6 @@ const HomeScreen = ({ navigation }) => {
             component={DetailLayout}
           />
       </Stack.Navigator>
-      }
     </SafeAreaView>
   );
 };

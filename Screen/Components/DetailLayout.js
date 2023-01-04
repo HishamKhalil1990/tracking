@@ -1,7 +1,23 @@
+import { useEffect, useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity, Linking, Platform, TextInput, ScrollView } from "react-native"
+import api from "../../api/api";
+import Loader from "./Loader";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import theme from "../../utils/theme"
 
 export default DetailLayout = ({ route, navigation }) => {
+
+    const [token, setToken] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const checkStorage = async () => {
+          let user = await AsyncStorage.getItem("user");
+          user = JSON.parse(user);
+          setToken(user.token);
+        };
+        checkStorage();
+      }, []);
 
     const openAddressOnMap = () => {
         const scheme = Platform.select({
@@ -32,6 +48,36 @@ export default DetailLayout = ({ route, navigation }) => {
             }
         });
     }
+
+    const sendStatus = async(status) => {
+        setIsLoading(true);
+        api
+        .send(token,status)
+        .then((results) => {
+            setIsLoading(false);
+            if (results.status == "success") {
+                alert(results.msg)
+                if(status == 'finished'){
+                    navigation.goBack()
+                }
+            } else if (results.status == "unauthorized"){
+            AsyncStorage.clear()
+            alert(
+                "انتهت الجلسة الرجاء اعادة الدخول مرة اخرى"
+            );
+            navigation.replace('Auth')
+            }
+        })
+        .catch((num) => {
+            setIsLoading(false);
+            if (num == 1) {
+            alert("حدث خطا ما الرجاء المحاولة مرة اخرى");
+            } else {
+            alert("الرجاء التاكد من الاتصال بالانترنت");
+            }
+        });
+    }
+
     return (
         <ScrollView>
             <View
@@ -42,6 +88,7 @@ export default DetailLayout = ({ route, navigation }) => {
                     backgroundColor:'#EEEEEE'
                 }}
                 >
+                <Loader loading={isLoading} />
                 <TextInput 
                     value={route.params.data.description}
                     editable={false}
@@ -116,7 +163,7 @@ export default DetailLayout = ({ route, navigation }) => {
                     </View>
                     <TouchableOpacity
                         style={styles.button}
-                        onPress={() => {}}
+                        onPress={() => {sendStatus('arrived')}}
                     >
                         <Text>
                             click
@@ -140,7 +187,7 @@ export default DetailLayout = ({ route, navigation }) => {
                     </View>
                     <TouchableOpacity
                         style={styles.button}
-                        onPress={() => {}}
+                        onPress={() => {sendStatus('finished')}}
                     >
                         <Text>
                             click
