@@ -72,14 +72,14 @@ const DrawerNavigatorRoutes = (props) => {
     <Drawer.Navigator
       screenOptions={{
         drawerActiveTintColor: theme.colors.general,
-        drawerInactiveTintColor:"#fff",
         drawerActiveBackgroundColor: '#fff',
+        drawerInactiveTintColor:"#fff",
         headerShown:false
       }}
       drawerContent={CustomSidebarMenu}>
       <Drawer.Screen
         name="homeScreenStack"
-        options={{drawerLabel: 'Home Screen'}}
+        options={{drawerLabel: 'Home'}}
         component={HomeScreenStack}
       />
       {/* <Drawer.Screen

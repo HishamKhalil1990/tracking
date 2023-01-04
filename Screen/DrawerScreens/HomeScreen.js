@@ -4,15 +4,31 @@
 // Import React and Component
 import { useEffect, useState } from "react";
 import { View, Text, SafeAreaView } from "react-native";
+import 'react-native-gesture-handler';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {createStackNavigator} from '@react-navigation/stack';
 import api from "../../api/api";
 import CardList from "../Components/CardList";
 import Loader from "../Components/Loader";
+import DetailLayout from "../Components/DetailLayout";
 
-const HomeScreen = ({ navigation }) => {
+const Stack = createStackNavigator()
+
+const HomeScreen = ({ navigation, route }) => {
   const [token, setToken] = useState("");
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [orderNo, setOrderNo] = useState()
+
+  const removeOrderNo = (index) => {
+    if(orderNo != -1){
+      const newData = data.filter((order,ind) => {
+        return ind != index
+      })
+      setOrderNo(-1)
+      setData(newData)
+    }
+  }
 
   const getUserOrders = async (token) => {
     api
@@ -54,35 +70,46 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    removeOrderNo(orderNo)
+  }, [orderNo]);
+
+  useEffect(() => {
     if (token != "") {
       getUserOrders(token);
     }
   }, [token]);
 
-  const showData = () => {
+  const Cards = ({ navigation }) => {
     return (
       <CardList
         data={data}
         token={token}
         setIsLoading={setIsLoading}
         getUserOrders={getUserOrders}
+        navigation={navigation}
+        setOrderNo={setOrderNo}
       />
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1, padding: 16 }}>
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <View>{isLoading ? <Loader loading={isLoading} /> : showData()}</View>
-        </View>
-      </View>
+    <SafeAreaView style={{ flex: 1, }}>
+      <Loader loading={isLoading} />
+        <Stack.Navigator initialRouteName="cards" screenOptions={{
+          // cardStyle:{flex:1,alignItems: "center",justifyContent: "center",}
+        }}>
+          <Stack.Screen
+            name="cards"
+            component={Cards}
+            options={{ title: 'الطلبات', headerTitleStyle: {fontWeight: 'bold',marginLeft:'40%'},}}
+            // options={{headerShown: false,}}
+          />
+          <Stack.Screen
+            name="detail"
+            options={{ title: 'التفاصيل', headerTitleStyle: {fontWeight: 'bold',marginLeft:'30%'},}}
+            component={DetailLayout}
+          />
+      </Stack.Navigator>
     </SafeAreaView>
   );
 };
