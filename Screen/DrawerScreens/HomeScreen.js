@@ -14,10 +14,21 @@ import DetailLayout from "../Components/DetailLayout";
 
 const Stack = createStackNavigator()
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, route }) => {
   const [token, setToken] = useState("");
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [orderNo, setOrderNo] = useState()
+
+  const removeOrderNo = (index) => {
+    if(orderNo != -1){
+      const newData = data.filter((order,ind) => {
+        return ind != index
+      })
+      setOrderNo(-1)
+      setData(newData)
+    }
+  }
 
   const getUserOrders = async (token) => {
     api
@@ -59,6 +70,10 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    removeOrderNo(orderNo)
+  }, [orderNo]);
+
+  useEffect(() => {
     if (token != "") {
       getUserOrders(token);
     }
@@ -72,6 +87,7 @@ const HomeScreen = ({ navigation }) => {
         setIsLoading={setIsLoading}
         getUserOrders={getUserOrders}
         navigation={navigation}
+        setOrderNo={setOrderNo}
       />
     );
   };

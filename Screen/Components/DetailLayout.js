@@ -58,6 +58,7 @@ export default DetailLayout = ({ route, navigation }) => {
             if (results.status == "success") {
                 alert(results.msg)
                 if(status == 'finished'){
+                    route.params.setOrderNo(route.params.index)
                     navigation.goBack()
                 }
             } else if (results.status == "unauthorized"){

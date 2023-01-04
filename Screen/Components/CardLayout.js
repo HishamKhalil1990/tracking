@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from "react-native"
 import { color } from "react-native-reanimated"
 import theme from "../../utils/theme"
 
-export default CardLayout = ({ record, index, navigation }) => {
+export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
 
     const [data,setData] = useState(record)
     
@@ -19,8 +19,6 @@ export default CardLayout = ({ record, index, navigation }) => {
                 style={{
                     width:'85%',
                     marginBottom:5,
-                    // backgroundColor: theme.colors.general,
-                    // borderRadius:25,
                     flex: 1,
                     flexDirection:'row-reverse',
                     alignItems: "center",
@@ -44,7 +42,7 @@ export default CardLayout = ({ record, index, navigation }) => {
                 </View>
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => {navigation.navigate('detail',{data})}}
+                    onPress={() => {navigation.navigate('detail',{data,index,setOrderNo})}}
                 >
                     <Text style={styles.btuText}>
                         عرض

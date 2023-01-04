@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const windowWidth = Dimensions.get('window').width;
 
-export default CardList = ({ data, token, setIsLoading, getUserOrders, navigation }) => {
+export default CardList = ({ data, token, setIsLoading, getUserOrders, navigation, setOrderNo }) => {
     const [refreshing, setRefreshing] = useState(false)
     const refresh = () => {
         setIsLoading(true)
@@ -14,7 +14,7 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders, navigatio
 
     const renderItem = (item,index) => {
         return(
-            <CardLayout record={item} index={index} navigation={navigation}/>
+            <CardLayout record={item} index={index} navigation={navigation} setOrderNo={setOrderNo}/>
         )
     }
 
