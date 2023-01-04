@@ -3,6 +3,9 @@ import { Text, View, StyleSheet, TouchableOpacity, Linking, Platform, TextInput,
 import api from "../../api/api";
 import Loader from "./Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Foundation } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import theme from "../../utils/theme"
 
 export default DetailLayout = ({ route, navigation }) => {
@@ -137,12 +140,10 @@ export default DetailLayout = ({ route, navigation }) => {
                         </Text>
                     </View>
                     <TouchableOpacity
-                        style={styles.button}
+                        style={[styles.button,{backgroundColor:"#5BC0F8"}]}
                         onPress={openAddressOnMap}
                     >
-                        <Text>
-                            click
-                        </Text>
+                        <Foundation name="map" size={30} color="#fff" />
                     </TouchableOpacity>
                 </View>
                 <View
@@ -163,12 +164,10 @@ export default DetailLayout = ({ route, navigation }) => {
                         </Text>
                     </View>
                     <TouchableOpacity
-                        style={styles.button}
+                        style={[styles.button,{backgroundColor:'#379237'}]}
                         onPress={() => {sendStatus('arrived')}}
                     >
-                        <Text>
-                            click
-                        </Text>
+                        <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
                     </TouchableOpacity>
                 </View>
                 <View
@@ -187,12 +186,10 @@ export default DetailLayout = ({ route, navigation }) => {
                         </Text>
                     </View>
                     <TouchableOpacity
-                        style={styles.button}
+                        style={[styles.button,,{backgroundColor:'#FF6D28'}]}
                         onPress={() => {sendStatus('finished')}}
                     >
-                        <Text>
-                            click
-                        </Text>
+                        <MaterialIcons name="done-all" size={30} color="#fff" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -219,7 +216,7 @@ const styles = StyleSheet.create({
     button: {
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#5BC0F8",
+        // backgroundColor: "#5BC0F8",
         padding: 10,
         width:'25%',
         height:70
