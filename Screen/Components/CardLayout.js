@@ -58,8 +58,6 @@ export default CardLayout = ({ record, index, navigation }) => {
 const styles = StyleSheet.create({
     viewText:{
         width:'75%',
-        // borderWidth:2,
-        // borderColor:'black',
         height:70,
         flex: 1,
         flexDirection:'row-reverse',
@@ -73,7 +71,6 @@ const styles = StyleSheet.create({
         marginBottom:5,
         marginRight:10,
         textAlign:'right',
-        // color:'#fff'
     },
     button: {
         justifyContent: "center",
