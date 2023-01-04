@@ -10,6 +10,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import api from "../../api/api";
 import CardList from "../Components/CardList";
 import Loader from "../Components/Loader";
+import DetailLayout from "../Components/DetailLayout";
 
 const Stack = createStackNavigator()
 
@@ -63,26 +64,17 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [token]);
 
-  const Cards = () => {
+  const Cards = ({ navigation }) => {
     return (
       <CardList
         data={data}
         token={token}
         setIsLoading={setIsLoading}
         getUserOrders={getUserOrders}
+        navigation={navigation}
       />
     );
   };
-
-  const Detail = () => {
-    return(
-      <View>
-        <Text>
-          detail
-        </Text>
-      </View>
-    )
-  }
 
   return (
     <SafeAreaView style={{ flex: 1, }}>
@@ -100,16 +92,18 @@ const HomeScreen = ({ navigation }) => {
         </View>
       :
         <Stack.Navigator initialRouteName="cards" screenOptions={{
-          cardStyle:{flex:1,alignItems: "center",justifyContent: "center",}
+          // cardStyle:{flex:1,alignItems: "center",justifyContent: "center",}
         }}>
           <Stack.Screen
             name="cards"
             component={Cards}
-            options={{headerShown: false,}}
+            options={{ title: 'الطلبات', headerTitleStyle: {fontWeight: 'bold',marginLeft:'40%'},}}
+            // options={{headerShown: false,}}
           />
           <Stack.Screen
             name="detail"
-            component={Detail}
+            options={{ title: 'التفاصيل', headerTitleStyle: {fontWeight: 'bold',marginLeft:'30%'},}}
+            component={DetailLayout}
           />
       </Stack.Navigator>
       }

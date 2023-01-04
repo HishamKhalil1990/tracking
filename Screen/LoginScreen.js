@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   inputStyle: {
     flex: 1,
-    color: theme.colors.general,
+    color: 'black',
     paddingLeft: 15,
     paddingRight: 15,
     borderWidth: 1,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     borderColor: "#dadae8",
   },
   registerTextStyle: {
-    color: theme.colors.general,
+    color: 'black',
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 14,

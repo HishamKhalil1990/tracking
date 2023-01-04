@@ -5,16 +5,16 @@ import { useState } from "react";
 
 const windowWidth = Dimensions.get('window').width;
 
-export default CardList = ({ data, token, setIsLoading, getUserOrders }) => {
+export default CardList = ({ data, token, setIsLoading, getUserOrders, navigation }) => {
     const [refreshing, setRefreshing] = useState(false)
     const refresh = () => {
         setIsLoading(true)
         getUserOrders(token)
     }
 
-    const renderItem = ({item}) => {
+    const renderItem = (item,index) => {
         return(
-            <CardLayout record={item} />
+            <CardLayout record={item} index={index} navigation={navigation}/>
         )
     }
 
@@ -22,9 +22,10 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders }) => {
         <FlatList 
             style={{
                 width:windowWidth,
+                backgroundColor:'#EEEEEE'
             }}
             data={data}
-            renderItem={renderItem}
+            renderItem={({item, index}) => renderItem(item,index)}
             keyExtractor={item => item.name}
             refreshControl={
                 <RefreshControl
