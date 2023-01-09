@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Linking, Platform, TextInput, ScrollView } from "react-native"
+// import { Text, View, StyleSheet, TouchableOpacity, Linking, Platform, TextInput, ScrollView } from "react-native"
+import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView } from "react-native"
 import api from "../../api/api";
 import Loader from "./Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,6 +8,8 @@ import { Foundation } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from "../../utils/theme"
+import {showLocation} from 'react-native-map-link'
+import * as Linking from 'expo-linking'
 
 export default DetailLayout = ({ route, navigation }) => {
 
@@ -23,12 +26,18 @@ export default DetailLayout = ({ route, navigation }) => {
       }, []);
 
     const openAddressOnMap = () => {
+        // showLocation({
+        //     latitude: route.params.data.destination.lat,
+        //     longitude: route.params.data.destination.long,
+        //     appsWhiteList: ['google-maps'], // optionally you can set which apps to show (default: will show all supported apps installed on device)
+        //     directionsMode: 'car', // optional, accepted values are 'car', 'walk', 'public-transport' or 'bike'
+        //   });
         const scheme = Platform.select({
             ios: 'maps:0,0?q=',
             android: 'geo:0,0?q=',
           });
           const latLng = `${route.params.data.destination.lat},${route.params.data.destination.long}`;
-          const label = label;
+          const label = route.params.data.name;
           const url = Platform.select({
             ios: `${scheme}${label}@${latLng}`,
             android: `${scheme}${latLng}(${label})`,
@@ -37,19 +46,19 @@ export default DetailLayout = ({ route, navigation }) => {
     };
     
     const openExternalApp = (url) => {
-        Linking.canOpenURL(url).then(supported => {
-            if (supported) {
-            Linking.openURL(url);
-            } else {
-            Alert.alert(
-                'ERROR',
-                'Unable to open: ' + url,
-                [
-                {text: 'OK'},
-                ]
-            );
-            }
-        });
+        Linking.openURL(url);
+        // Linking.canOpenURL(url).then(supported => {
+        //     if (supported) {
+        //     } else {
+        //     Alert.alert(
+        //         'ERROR',
+        //         'Unable to open: ' + url,
+        //         [
+        //         {text: 'OK'},
+        //         ]
+        //     );
+        //     }
+        // });
     }
 
     const sendStatus = async(status) => {

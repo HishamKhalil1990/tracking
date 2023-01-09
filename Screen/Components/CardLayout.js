@@ -37,7 +37,7 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
             >
                 <View style={styles.viewText}>
                     <Text style={styles.text}>
-                        name: {record.name}
+                        {record.name}
                     </Text>
                 </View>
                 <TouchableOpacity
