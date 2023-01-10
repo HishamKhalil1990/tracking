@@ -26,7 +26,7 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders, navigatio
             }}
             data={data}
             renderItem={({item, index}) => renderItem(item,index)}
-            keyExtractor={item => item.name}
+            keyExtractor={item => item.no}
             refreshControl={
                 <RefreshControl
                     refreshing={refreshing}
