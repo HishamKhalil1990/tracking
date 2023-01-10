@@ -102,22 +102,12 @@ export default DetailLayout = ({ route, navigation }) => {
                 }}
                 >
                 <Loader loading={isLoading} />
-                <TextInput 
-                    value={route.params.data.description}
-                    editable={false}
-                    multiline={true}
-                    numberOfLines={20}
+                <View
                     style={{
                         marginTop:25,
                         height:'40%',
                         width:'80%',
                         backgroundColor:'#fff',
-                        textAlign:'right',
-                        textAlignVertical:'top',
-                        color:'black',
-                        fontSize:17,
-                        fontWeight:'bold',
-                        padding:10,
                         shadowColor: "#000",
                         shadowOffset: {
                             width: 0,
@@ -129,7 +119,38 @@ export default DetailLayout = ({ route, navigation }) => {
                         elevation: 5,
                         borderRadius:10
                     }}
-                />
+                >
+                    <View style={styles.detail}>
+                        <Text style={[styles.text2]}>
+                            {route.params.data.name}
+                        </Text>
+                        <Text style={[styles.text3]}>
+                            no: {route.params.data.no}
+                        </Text>
+                    </View>
+                    <TextInput 
+                        value={route.params.data.description}
+                        editable={false}
+                        multiline={true}
+                        numberOfLines={20}
+                        style={{
+                            height:'85%',
+                            width:'100%',
+                            backgroundColor:'#fff',
+                            textAlign:'right',
+                            textAlignVertical:'top',
+                            color:'black',
+                            fontSize:15,
+                            fontWeight:'bold',
+                            paddingTop:25,
+                            paddingRight:10,
+                            paddingLeft:10,
+                            paddingBottom:10,
+                            borderBottomLeftRadius:10,
+                            borderBottomRightRadius:10
+                        }}
+                    />
+                </View>
                 <View
                     style={{
                         marginTop:40,
@@ -231,8 +252,30 @@ const styles = StyleSheet.create({
         height:70
     },
     btuText:{
-        fontWeight: 'bold',
         fontSize:20,
         color:'#fff'
+    },
+    text2:{
+        fontWeight: 'bold',
+        fontSize:15,
+        marginRight:10,
+        textAlign:'right',
+    },
+    text3:{
+        fontWeight: 'bold',
+        fontSize:15,
+        marginLeft:10,
+        textAlign:'right',
+    },
+    detail:{
+        marginTop:5,
+        width:'100%',
+        height:'15%', 
+        flex: 1,
+        flexDirection:'row-reverse',
+        alignItems: "center",
+        justifyContent:'space-between',
+        borderBottomWidth:2,
+        borderBottomColor:'black',
     }
 })
