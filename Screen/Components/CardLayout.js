@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native"
-import { color } from "react-native-reanimated"
 import theme from "../../utils/theme"
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
 
@@ -13,17 +13,18 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
                 flex: 1,
                 alignItems: "center",
                 justifyContent: "center",
-                paddingTop:30,
+                paddingTop:index==0? 30 : 0,
             }}>
             <View
                 style={{
                     width:'85%',
-                    marginBottom:5,
+                    marginBottom:2,
                     flex: 1,
                     flexDirection:'row-reverse',
                     alignItems: "center",
                     justifyContent:'space-between',
                     backgroundColor: 'white',
+                    borderRadius:10,
                     shadowColor: "#000",
                     shadowOffset: {
                         width: 0,
@@ -45,7 +46,7 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
                     onPress={() => {navigation.navigate('detail',{data,index,setOrderNo})}}
                 >
                     <Text style={styles.btuText}>
-                        عرض
+                        <MaterialCommunityIcons name="page-next-outline" size={40} color="#fff" />
                     </Text>   
                 </TouchableOpacity>
             </View>
@@ -55,16 +56,16 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
 
 const styles = StyleSheet.create({
     viewText:{
-        width:'75%',
-        height:70,
+        width:'70%',
+        height:120,
         flex: 1,
         flexDirection:'row-reverse',
         alignItems: "center",
         justifyContent:'space-between',
     },
     text:{
-        fontWeight: 'bold',
-        fontSize:15,
+        // fontWeight: 'bold',
+        fontSize:25,
         marginTop:5,
         marginBottom:5,
         marginRight:10,
@@ -75,13 +76,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "#5BC0F8",
         padding: 10,
-        width:'25%',
-        height:70
-        
+        width:'30%',
+        height:120,
+        borderBottomLeftRadius:10,
+        borderTopLeftRadius:10
     },
     btuText:{
         fontWeight: 'bold',
-        fontSize:20,
+        fontSize:25,
         color:'#fff'
     }
 })
