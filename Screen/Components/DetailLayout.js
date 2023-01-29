@@ -1,20 +1,33 @@
-import { useEffect, useState } from "react";
-// import { Text, View, StyleSheet, TouchableOpacity, Linking, Platform, TextInput, ScrollView } from "react-native"
-import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView } from "react-native"
+import { useEffect, useState, useRef } from "react";
+import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions } from "react-native"
 import api from "../../api/api";
 import Loader from "./Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Foundation } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import theme from "../../utils/theme"
-import {showLocation} from 'react-native-map-link'
+import { WebView } from 'react-native-webview';
+import * as Location from 'expo-location';
 import * as Linking from 'expo-linking'
+import { SwiperFlatList } from "react-native-swiper-flatlist"
+
+const widowWidth = Dimensions.get('window').width;
+const viewWidth = 0.8*widowWidth;
+let intervalID;
+let counter = 1;
 
 export default DetailLayout = ({ route, navigation }) => {
 
     const [token, setToken] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [mapInd, setMapInd] = useState(0);
+    const [orderNo, setOrderNo] = useState(route.params.data.no);
+    const [url, setUrl] = useState()
+
+    const swipeRef = useRef()
+    const mapSwipeRef = useRef()
 
     useEffect(() => {
         const checkStorage = async () => {
@@ -23,42 +36,52 @@ export default DetailLayout = ({ route, navigation }) => {
           setToken(user.token);
         };
         checkStorage();
-      }, []);
+        (async () => {
+            let location = await Location.getCurrentPositionAsync({});
+            setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
+        })();
+        return () => {
+            emptyInterval()
+        }
+    }, []);
 
-    const openAddressOnMap = () => {
-        // showLocation({
-        //     latitude: route.params.data.destination.lat,
-        //     longitude: route.params.data.destination.long,
-        //     appsWhiteList: ['google-maps'], // optionally you can set which apps to show (default: will show all supported apps installed on device)
-        //     directionsMode: 'car', // optional, accepted values are 'car', 'walk', 'public-transport' or 'bike'
-        //   });
-        const scheme = Platform.select({
-            ios: 'maps:0,0?q=',
-            android: 'geo:0,0?q=',
-          });
-          const latLng = `${route.params.data.destination.lat},${route.params.data.destination.long}`;
-          const label = route.params.data.name;
-          const url = Platform.select({
-            ios: `${scheme}${label}@${latLng}`,
-            android: `${scheme}${latLng}(${label})`,
-          });
-        openExternalApp(url);
-    };
-    
-    const openExternalApp = (url) => {
-        Linking.openURL(url);
-        // Linking.canOpenURL(url).then(supported => {
-        //     if (supported) {
-        //     } else {
-        //     Alert.alert(
-        //         'ERROR',
-        //         'Unable to open: ' + url,
-        //         [
-        //         {text: 'OK'},
-        //         ]
-        //     );
-        //     }
-        // });
+    const startSendLocation = (index) => {
+        swipeRef.current.scrollToIndex({index})
+        if(index == 1){
+            if(!intervalID){
+                intervalID = setInterval(() => {
+                    (async () => {
+                        let location = await Location.getCurrentPositionAsync({});
+                        const long = location.coords.longitude;
+                        const lat = location.coords.latitude
+                        console.log(long,lat)
+                    })();
+                },5000)
+            }
+        }else if(index == 0){
+            if(intervalID){
+                clearInterval(intervalID)
+                intervalID = undefined
+            }
+        }
+    }
+
+    const emptyInterval = () => {
+        if(intervalID){
+            clearInterval(intervalID)
+            intervalID = undefined
+        }
+    }
+
+    const toggleMap = () => {
+        const currInd = mapSwipeRef.current.getCurrentIndex()
+        if(currInd == 0){
+            mapSwipeRef.current.scrollToIndex({index:1})
+            setMapInd(1)
+        }else if(currInd == 1){
+            mapSwipeRef.current.scrollToIndex({index:0})
+            setMapInd(0)
+        }
     }
 
     const sendStatus = async(status) => {
@@ -104,123 +127,215 @@ export default DetailLayout = ({ route, navigation }) => {
                 <Loader loading={isLoading} />
                 <View
                     style={{
-                        marginTop:25,
-                        height:'40%',
-                        width:'80%',
-                        backgroundColor:'#fff',
-                        shadowColor: "#000",
-                        shadowOffset: {
-                            width: 0,
-                            height: 2,
-                        },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 3.84,
+                        height:'65%',
+                        width:'100%',
+                    }}
+                >
+                    <SwiperFlatList
+                        ref={mapSwipeRef}
+                        disableGesture={true}
+                    >
+                        <View
+                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',marginTop:25,}}
+                        >
+                            <View
+                                style={{
+                                    height:'100%',
+                                    width:viewWidth,
+                                    backgroundColor:'#fff',
+                                    shadowColor: "#000",
+                                    shadowOffset: {
+                                        width: 0,
+                                        height: 2,
+                                    },
+                                    shadowOpacity: 0.25,
+                                    shadowRadius: 3.84,
 
-                        elevation: 5,
-                        borderRadius:10
-                    }}
+                                    elevation: 5,
+                                    borderRadius:10
+                                }}
+                            >
+                                <View style={styles.detail}>
+                                    <Text style={[styles.text2]}>
+                                        {route.params.data.name}
+                                    </Text>
+                                    <Text style={[styles.text3]}>
+                                        no: {route.params.data.no}
+                                    </Text>
+                                </View>
+                                <TextInput 
+                                    value={route.params.data.description}
+                                    editable={false}
+                                    multiline={true}
+                                    numberOfLines={20}
+                                    style={{
+                                        height:'85%',
+                                        width:'100%',
+                                        backgroundColor:'#fff',
+                                        textAlign:'right',
+                                        textAlignVertical:'top',
+                                        color:'black',
+                                        fontSize:15,
+                                        fontWeight:'bold',
+                                        paddingTop:25,
+                                        paddingRight:10,
+                                        paddingLeft:10,
+                                        paddingBottom:10,
+                                        borderBottomLeftRadius:10,
+                                        borderBottomRightRadius:10
+                                    }}
+                                />
+                            </View>
+                        </View>
+                        {url?
+                            <WebView
+                                style={{
+                                    height:'100%',
+                                    width:widowWidth,
+                                }}
+                                geolocationEnabled={true}
+                                source={{uri:url}}
+                                onShouldStartLoadWithRequest={event => {
+                                    if (event.url.match(/(goo\.gl\/maps)|(maps\.app\.goo\.gl)/) ) {
+                                       Linking.openURL(event.url)
+                                       return false
+                                         }
+                                          return true
+                                              
+                                       }}
+                                >
+                            </WebView>
+                        :
+                            <View
+                                style={{
+                                    height:'100%',
+                                    width:widowWidth,
+                                    flex:1,justifyContent:'center',
+                                    alignItems:'center',
+                                    backgroundColor:'#fff'
+                                }}
+                            >
+                                <Text>
+                                    Loading
+                                </Text>
+                            </View>
+                        }
+                    </SwiperFlatList>
+                </View>
+                <View
+                    style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',maxHeight:10,marginTop:10}}  
                 >
-                    <View style={styles.detail}>
-                        <Text style={[styles.text2]}>
-                            {route.params.data.name}
-                        </Text>
-                        <Text style={[styles.text3]}>
-                            no: {route.params.data.no}
-                        </Text>
-                    </View>
-                    <TextInput 
-                        value={route.params.data.description}
-                        editable={false}
-                        multiline={true}
-                        numberOfLines={20}
-                        style={{
-                            height:'85%',
-                            width:'100%',
-                            backgroundColor:'#fff',
-                            textAlign:'right',
-                            textAlignVertical:'top',
-                            color:'black',
-                            fontSize:15,
-                            fontWeight:'bold',
-                            paddingTop:25,
-                            paddingRight:10,
-                            paddingLeft:10,
-                            paddingBottom:10,
-                            borderBottomLeftRadius:10,
-                            borderBottomRightRadius:10
+                    <TouchableOpacity
+                        style={[styles.button2,{backgroundColor:'gray'}]}
+                        onPress={() => {
+                            toggleMap()
                         }}
-                    />
-                </View>
-                <View
-                    style={{
-                        marginTop:40,
-                        width:'80%',
-                        maxHeight:70,
-                        flex: 1,
-                        flexDirection:'row-reverse',
-                        justifyContent:'space-between',
-                        backgroundColor: 'white',
-                        borderBottomWidth:2,
-                        borderBottomColor:'#EEEEEE'
-                    }}
-                >
-                    <View style={styles.viewText}>
-                        <Text style={styles.text}>
-                            الذهاب
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.button,{backgroundColor:"#5BC0F8"}]}
-                        onPress={openAddressOnMap}
                     >
-                        <Foundation name="map" size={30} color="#fff" />
+                        {mapInd == 0?
+                            <FontAwesome5 name="map-marked-alt" size={30} color="#fff" />
+                        :
+                            <MaterialIcons name="description" size={30} color="#fff" />
+                        }
                     </TouchableOpacity>
                 </View>
                 <View
-                    style={{
-                        width:'80%',
-                        maxHeight:70,
-                        flex: 1,
-                        flexDirection:'row-reverse',
-                        justifyContent:'space-between',
-                        backgroundColor: 'white',
-                        borderBottomWidth:2,
-                        borderBottomColor:'#EEEEEE'
-                    }}
-                >
-                    <View style={styles.viewText}>
-                        <Text style={styles.text}>
-                            وصلت
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.button,{backgroundColor:'#379237'}]}
-                        onPress={() => {sendStatus('arrived')}}
+                    style={{width:'100%', marginTop:0,zIndex:0}}
+                >   
+                    <SwiperFlatList
+                        style={{height:140}}
+                        showPagination
+                        paginationActiveColor={theme.colors.general}
+                        index={2}
+                        ref={swipeRef}
                     >
-                        <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
-                    </TouchableOpacity>
-                </View>
-                <View
-                    style={{
-                        width:'80%',
-                        maxHeight:70,
-                        flex: 1,
-                        flexDirection:'row-reverse',
-                        justifyContent:'space-between',
-                        backgroundColor: 'white',
-                    }}
-                >
-                    <View style={styles.viewText}>
-                        <Text style={styles.text}>
-                            انتهيت
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.button,,{backgroundColor:'#FF6D28'}]}
-                        onPress={() => {sendStatus('finished')}}
-                    >
-                        <MaterialIcons name="done-all" size={30} color="#fff" />
-                    </TouchableOpacity>
+                        <View
+                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center'}}
+                        >
+                            <View
+                                style={{
+                                    width:viewWidth,
+                                    maxHeight:70,
+                                    flex: 1,
+                                    flexDirection:'row-reverse',
+                                    justifyContent:'space-between',
+                                    backgroundColor: 'white',
+                                }}
+                            >
+                                <View style={styles.viewText}>
+                                    <Text style={styles.text}>
+                                        انتهيت
+                                    </Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={[styles.button,,{backgroundColor:'#FF6D28'}]}
+                                    onPress={() => {
+                                        emptyInterval(),
+                                        sendStatus('finished')
+                                    }}
+                                >
+                                    <MaterialIcons name="done-all" size={30} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        <View
+                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center'}}
+                        >
+                            <View
+                                style={{
+                                    width:viewWidth,
+                                    maxHeight:70,
+                                    flex: 1,
+                                    flexDirection:'row-reverse',
+                                    justifyContent:'space-between',
+                                    backgroundColor: 'white',
+                                }}
+                            >
+                                <View style={styles.viewText}>
+                                    <Text style={styles.text}>
+                                        وصلت
+                                    </Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={[styles.button,{backgroundColor:'#379237'}]}
+                                    onPress={() => {
+                                        startSendLocation(0),
+                                        sendStatus('arrived')
+                                    }}
+                                >
+                                    <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        <View
+                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center'}}
+                        >
+                            <View
+                                style={{
+                                    width:viewWidth,
+                                    maxHeight:70,
+                                    flex: 1,
+                                    flexDirection:'row-reverse',
+                                    justifyContent:'space-between',
+                                    backgroundColor: 'white',
+                                }}
+                            >
+                                <View style={styles.viewText}>
+                                    <Text style={styles.text}>
+                                        الذهاب
+                                    </Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={[styles.button,{backgroundColor:"#5BC0F8"}]}
+                                    onPress={() => {
+                                        startSendLocation(1),
+                                        sendStatus('started')
+                                    }}
+                                >
+                                    <Foundation name="map" size={30} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </SwiperFlatList>
                 </View>
             </View>
         </ScrollView>
@@ -246,10 +361,16 @@ const styles = StyleSheet.create({
     button: {
         justifyContent: "center",
         alignItems: "center",
-        // backgroundColor: "#5BC0F8",
         padding: 10,
         width:'25%',
         height:70
+    },
+    button2: {
+        justifyContent: "center",
+        alignItems: "center",
+        width:50,
+        height:50,
+        borderRadius:25,
     },
     btuText:{
         fontSize:20,

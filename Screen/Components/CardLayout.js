@@ -18,7 +18,7 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
             <View
                 style={{
                     width:'97%',
-                    marginBottom:2,
+                    marginBottom:5,
                     flex: 1,
                     flexDirection:'row-reverse',
                     alignItems: "center",
@@ -37,21 +37,24 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
                 }}
             >
                 <View style={styles.viewText}>
-                    <Text style={[styles.text,{marginTop:10}]}>
+                    <Text style={[styles.text,{marginTop:20}]}>
                         {record.name}
                     </Text>
                     <Text style={[styles.text,{marginTop:5}]}>
                         رقم الطلبية: {record.no}
                     </Text>
                     <Text style={[styles.text,{marginTop:5}]}>
-                        الحي: {record.region}
+                        الحي: {record.region? record.region : 'لا يوجد'}
                     </Text>
-                    <View style={{marginTop:-5,width:'100%',flex: 1,flexDirection:'row-reverse',alignItems: "center",justifyContent:'space-between',}}>
+                    <Text style={[styles.text,{marginTop:5}]}>
+                        ملاحظة: {record.note? record.note : 'لا يوجد'}
+                    </Text>
+                    <View style={{marginTop:-20,width:'100%',flex: 1,flexDirection:'row-reverse',alignItems: "center",justifyContent:'space-between',}}>
                         <Text style={[styles.text]}>
                             الكمية: {record.qty}
                         </Text>
                         <Text style={[styles.text2]}>
-                            المبلغ: {record.price} JD
+                            {record.price} JD
                         </Text>
                     </View>
                 </View>
@@ -60,7 +63,7 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
                     onPress={() => {navigation.navigate('detail',{data,index,setOrderNo})}}
                 >
                     <Text style={styles.btuText}>
-                        <MaterialCommunityIcons name="page-next-outline" size={40} color="#fff" />
+                        <MaterialCommunityIcons name="page-next-outline" size={50} color="#fff" />
                     </Text>   
                 </TouchableOpacity>
             </View>
@@ -71,24 +74,26 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
 const styles = StyleSheet.create({
     viewText:{
         width:'70%',
-        height:120,
+        height:200,
         flex: 1,
         alignItems: "flex-end",
         justifyContent:'flex-start',
     },
     text:{
         // fontWeight: 'bold',
-        fontSize:15,
+        fontSize:20,
         // marginBottom:5,
         marginRight:10,
         textAlign:'right',
     },
     text2:{
         fontWeight: 'bold',
-        fontSize:17,
+        fontSize:23,
         // marginBottom:5,
-        marginLeft:10,
+        marginLeft:5,
         textAlign:'right',
+        textAlignVertical:'center',
+        color:'#4FA095'
     },
     button: {
         justifyContent: "center",
@@ -96,7 +101,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#5BC0F8",
         padding: 10,
         width:'30%',
-        height:120,
+        height:200,
         borderBottomLeftRadius:10,
         borderTopLeftRadius:10
     },
