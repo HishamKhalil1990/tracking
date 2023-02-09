@@ -1,10 +1,12 @@
 import 'react-native-gesture-handler';
+import { useEffect } from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
  
 // Import Screens
 import LoginScreen from './Screen/LoginScreen';
 import DrawerNavigationRoutes from './Screen/DrawerNavigationRoutes';
+import * as Location from 'expo-location';
  
 const Stack = createStackNavigator();
  
@@ -22,6 +24,17 @@ const Auth = () => {
 };
  
 const App = () => {
+
+  useEffect(() => {
+    (async () => {
+      
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied');
+        return;
+      }
+    })();
+  }, []);
 
   return (
     <NavigationContainer>
