@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions } from "react-native"
+import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions, AppState } from "react-native"
 import api from "../../api/api";
 import Loader from "./Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,6 +28,27 @@ export default DetailLayout = ({ route, navigation }) => {
 
     const swipeRef = useRef()
     const mapSwipeRef = useRef()
+    const appState = useRef(AppState.currentState);
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', nextAppState => {
+          if (
+            appState.current.match(/inactive|background/) &&
+            nextAppState === 'active'
+          ){
+            console.log('App has come to the foreground!');
+          }else{
+            appState.current = nextAppState;
+            console.log('AppState', appState.current);
+            clearInterval(intervalID)
+            intervalID = undefined
+          }
+        });
+    
+        return () => {
+          subscription.remove();
+        };
+      }, []);
 
     useEffect(() => {
         const checkStorage = async () => {
@@ -54,7 +75,7 @@ export default DetailLayout = ({ route, navigation }) => {
                         let location = await Location.getCurrentPositionAsync({});
                         const long = location.coords.longitude;
                         const lat = location.coords.latitude
-                        console.log(long,lat)
+                        // console.log(long,lat)
                     })();
                 },5000)
             }
@@ -197,12 +218,16 @@ export default DetailLayout = ({ route, navigation }) => {
                                 source={{uri:url}}
                                 onShouldStartLoadWithRequest={event => {
                                     if (event.url.match(/(goo\.gl\/maps)|(maps\.app\.goo\.gl)/) ) {
+                                        if(swipeRef.current.getCurrentIndex() == 2){
+                                            startSendLocation(1),
+                                            sendStatus('started')
+                                        }
                                        Linking.openURL(event.url)
                                        return false
-                                         }
-                                          return true
+                                    }
+                                    return true
                                               
-                                       }}
+                                }}
                                 >
                             </WebView>
                         :
@@ -223,23 +248,28 @@ export default DetailLayout = ({ route, navigation }) => {
                     </SwiperFlatList>
                 </View>
                 <View
-                    style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',maxHeight:10,marginTop:10}}  
-                >
-                    <TouchableOpacity
-                        style={[styles.button2,{backgroundColor:'gray'}]}
-                        onPress={() => {
-                            toggleMap()
-                        }}
+                    style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',maxHeight:70,marginTop:-30}}  
                     >
-                        {mapInd == 0?
-                            <FontAwesome5 name="map-marked-alt" size={30} color="#fff" />
-                        :
-                            <MaterialIcons name="description" size={30} color="#fff" />
-                        }
-                    </TouchableOpacity>
+                    <View
+                        style={{flex:1,flexDirection:'row',justifyContent:'center',alignItems:'center',backgroundColor:'#EEEEEE',borderRadius:60,width:70}} 
+                    >
+                        <TouchableOpacity
+                            style={[styles.button2,{backgroundColor:'gray'}]}
+                            onPress={() => {
+                                toggleMap()
+                            }}
+                        >
+                            {mapInd == 0?
+                                <FontAwesome5 name="map-marked-alt" size={30} color="#fff" />
+                            :
+                                <MaterialIcons name="description" size={30} color="#fff" />
+                            }
+                        </TouchableOpacity>
+
+                    </View>
                 </View>
                 <View
-                    style={{width:'100%', marginTop:0,zIndex:0}}
+                    style={{width:'100%', marginTop:-10,zIndex:0}}
                 >   
                     <SwiperFlatList
                         style={{height:140}}
