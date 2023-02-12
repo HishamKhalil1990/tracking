@@ -12,11 +12,28 @@ import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import * as Linking from 'expo-linking'
 import { SwiperFlatList } from "react-native-swiper-flatlist"
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
 
 const widowWidth = Dimensions.get('window').width;
 const viewWidth = 0.8*widowWidth;
 let intervalID;
 let counter = 1;
+
+const BACKGROUND_FETCH_TASK = 'background-fetch';
+TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+    const now = Date.now();
+  
+    console.log(`Got background fetch call at date: ${new Date(now).toISOString()}`);
+    (async () => {
+        let location = await Location.getCurrentPositionAsync({});
+        const long = location.coords.longitude;
+        const lat = location.coords.latitude
+        console.log(long,lat)
+    })();
+    // Be sure to return the successful result type!
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  });
 
 export default DetailLayout = ({ route, navigation }) => {
 
@@ -25,10 +42,23 @@ export default DetailLayout = ({ route, navigation }) => {
     const [mapInd, setMapInd] = useState(0);
     const [orderNo, setOrderNo] = useState(route.params.data.no);
     const [url, setUrl] = useState()
+    const [isRegistered, setIsRegistered] = useState(false);
 
     const swipeRef = useRef()
     const mapSwipeRef = useRef()
     const appState = useRef(AppState.currentState);
+
+    const registerBackgroundFetchAsync = async () => {
+        return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+            minimumInterval: 5, // 5 minutes
+            stopOnTerminate: false, // android only,
+            startOnBoot: true, // android only
+        });
+    }
+
+    const unregisterBackgroundFetchAsync = async () => {
+        return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+    }
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', nextAppState => {
@@ -37,6 +67,7 @@ export default DetailLayout = ({ route, navigation }) => {
             nextAppState === 'active'
           ){
             console.log('App has come to the foreground!');
+            toggleFetchTask()
           }else{
             appState.current = nextAppState;
             console.log('AppState', appState.current);
@@ -48,7 +79,22 @@ export default DetailLayout = ({ route, navigation }) => {
         return () => {
           subscription.remove();
         };
-      }, []);
+    }, []);
+
+    const toggleFetchTask = async () => {
+        if (isRegistered) {
+          await unregisterBackgroundFetchAsync();
+        } else {
+          await registerBackgroundFetchAsync();
+        }
+        return checkStatusAsync();
+    };
+
+    const checkStatusAsync = async () => {
+        const isRegister = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+        setIsRegistered(isRegister);
+        console.log(isRegister)
+    };
 
     useEffect(() => {
         const checkStorage = async () => {
@@ -222,8 +268,9 @@ export default DetailLayout = ({ route, navigation }) => {
                                             startSendLocation(1),
                                             sendStatus('started')
                                         }
-                                       Linking.openURL(event.url)
-                                       return false
+                                        toggleFetchTask()
+                                        Linking.openURL(event.url)
+                                        return false
                                     }
                                     return true
                                               
