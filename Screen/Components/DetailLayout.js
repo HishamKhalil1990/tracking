@@ -50,7 +50,7 @@ export default DetailLayout = ({ route, navigation }) => {
 
     const registerBackgroundFetchAsync = async () => {
         return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-            minimumInterval: 5, // 5 minutes
+            minimumInterval: 30, // 5 minutes
             stopOnTerminate: false, // android only,
             startOnBoot: true, // android only
         });
