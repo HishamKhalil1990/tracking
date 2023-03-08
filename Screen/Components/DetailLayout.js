@@ -12,7 +12,6 @@ import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import * as Linking from 'expo-linking'
 import { SwiperFlatList } from "react-native-swiper-flatlist"
-import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 
 const widowWidth = Dimensions.get('window').width;
