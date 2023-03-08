@@ -1,8 +1,9 @@
-import { FlatList,TouchableOpacity,StyleSheet,Text,View } from "react-native"
+import { TouchableOpacity,StyleSheet,Text,View } from "react-native"
 import SwipeableFlatList from 'react-native-swipeable-list'
 import CardLayout from "./CardLayout"
 import { Dimensions, RefreshControl } from "react-native"
 import { useState } from "react";
+import { Feather } from '@expo/vector-icons'; 
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -17,12 +18,6 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders, navigatio
         return `${item.id}`;
     };
 
-    const renderItem = (item,index) => {
-        return(
-            <CardLayout record={item} index={index} navigation={navigation} setOrderNo={setOrderNo}/>
-        )
-    }
-
     const call = async(item) => {
         alert('called')
     }
@@ -31,31 +26,13 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders, navigatio
         return (
           <View style={[styles.qaContainer,{paddingTop:index==0? 30 : 0}]}>
             <TouchableOpacity style={[styles.button]} onPress={() => call(item)}>
-                {/* <Feather name="edit" size={30} color="#fff" /> */}
-                <Text>
-                    Call
-                </Text>
+                <Feather name="phone-call" size={30} color="#fff" />
             </TouchableOpacity>
           </View>
         );
       };
 
     return (
-        // <FlatList 
-        //     style={{
-        //         width:windowWidth,
-        //         backgroundColor:'#EEEEEE'
-        //     }}
-        //     data={data}
-        //     renderItem={({item, index}) => renderItem(item,index)}
-        //     keyExtractor={item => item.no}
-        //     refreshControl={
-        //         <RefreshControl
-        //             refreshing={refreshing}
-        //             onRefresh={refresh}
-        //         />
-        //     }
-        // />
         <SwipeableFlatList
             style={{
                 width:windowWidth,
