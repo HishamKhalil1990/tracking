@@ -18,7 +18,6 @@ import * as TaskManager from 'expo-task-manager';
 const widowWidth = Dimensions.get('window').width;
 const viewWidth = 0.8*widowWidth;
 let intervalID;
-let counter = 1;
 
 const BACKGROUND_FETCH_TASK = 'background-fetch';
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
@@ -33,22 +32,22 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     })();
     // Be sure to return the successful result type!
     return BackgroundFetch.BackgroundFetchResult.NewData;
-  });
+});
 
 export default DetailLayout = ({ route, navigation }) => {
 
     const [token, setToken] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [mapInd, setMapInd] = useState(0);
-    const [orderNo, setOrderNo] = useState(route.params.data.no);
     const [url, setUrl] = useState()
-    const [isRegistered, setIsRegistered] = useState(false);
+    const [stage, setStage] = useState('')
 
     const swipeRef = useRef()
     const mapSwipeRef = useRef()
     const appState = useRef(AppState.currentState);
 
     const registerBackgroundFetchAsync = async () => {
+        console.log('register')
         return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
             minimumInterval: 30, // 5 minutes
             stopOnTerminate: false, // android only,
@@ -57,6 +56,7 @@ export default DetailLayout = ({ route, navigation }) => {
     }
 
     const unregisterBackgroundFetchAsync = async () => {
+        console.log('unregister')
         return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
     }
 
@@ -67,7 +67,7 @@ export default DetailLayout = ({ route, navigation }) => {
             nextAppState === 'active'
           ){
             console.log('App has come to the foreground!');
-            toggleFetchTask()
+            toggleFetchTask(true)
           }else{
             appState.current = nextAppState;
             console.log('AppState', appState.current);
@@ -81,8 +81,8 @@ export default DetailLayout = ({ route, navigation }) => {
         };
     }, []);
 
-    const toggleFetchTask = async () => {
-        if (isRegistered) {
+    const toggleFetchTask = async (status) => {
+        if (status) {
           await unregisterBackgroundFetchAsync();
         } else {
           await registerBackgroundFetchAsync();
@@ -92,7 +92,6 @@ export default DetailLayout = ({ route, navigation }) => {
 
     const checkStatusAsync = async () => {
         const isRegister = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
-        setIsRegistered(isRegister);
         console.log(isRegister)
     };
 
@@ -130,6 +129,44 @@ export default DetailLayout = ({ route, navigation }) => {
                 clearInterval(intervalID)
                 intervalID = undefined
             }
+        }
+    }
+
+    const action = (index) => {
+        switch(index){
+            case 0:
+                startSendLocation(1)
+                sendStatus('started')
+                setStage('started')
+                break;
+            case 1:
+                if(stage == ''){
+                    swipeRef.current.scrollToIndex({index:0})
+                    alert('الرجاء بدء الذهاب اولا')
+                }else if(stage == 'started'){
+                    startSendLocation(2)
+                    sendStatus('arrived')
+                    setStage('arrived')
+                }else if(stage == 'arrived'){
+                    swipeRef.current.scrollToIndex({index:2})
+                    alert('تم حفظ الوصول سابقا')
+                }
+                break;
+            case 2:
+                if(stage == ''){
+                    swipeRef.current.scrollToIndex({index:0})
+                    alert('الرجاء بدء الذهاب اولا')
+                }else if(stage == 'started'){
+                    swipeRef.current.scrollToIndex({index:1})
+                    alert('الرحاء حفظ الوصول اولا')
+                }else if(stage == 'arrived'){
+                    emptyInterval(),
+                    sendStatus('finished')
+                    setStage('finished')
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -264,12 +301,11 @@ export default DetailLayout = ({ route, navigation }) => {
                                 source={{uri:url}}
                                 onShouldStartLoadWithRequest={event => {
                                     if (event.url.match(/(goo\.gl\/maps)|(maps\.app\.goo\.gl)/) ) {
-                                        if(swipeRef.current.getCurrentIndex() == 2){
-                                            startSendLocation(1),
-                                            sendStatus('started')
-                                        }
-                                        toggleFetchTask()
+                                        toggleFetchTask(false)
                                         Linking.openURL(event.url)
+                                        if(swipeRef.current.getCurrentIndex() == 0){
+                                            action(0)
+                                        }
                                         return false
                                     }
                                     return true
@@ -322,7 +358,7 @@ export default DetailLayout = ({ route, navigation }) => {
                         style={{height:140}}
                         showPagination
                         paginationActiveColor={theme.colors.general}
-                        index={2}
+                        index={0}
                         ref={swipeRef}
                     >
                         <View
@@ -340,17 +376,16 @@ export default DetailLayout = ({ route, navigation }) => {
                             >
                                 <View style={styles.viewText}>
                                     <Text style={styles.text}>
-                                        انتهيت
+                                        الذهاب
                                     </Text>
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.button,,{backgroundColor:'#FF6D28'}]}
+                                    style={[styles.button,{backgroundColor:"#5BC0F8"}]}
                                     onPress={() => {
-                                        emptyInterval(),
-                                        sendStatus('finished')
+                                        action(0)
                                     }}
                                 >
-                                    <MaterialIcons name="done-all" size={30} color="#fff" />
+                                    <Foundation name="map" size={30} color="#fff" />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -375,8 +410,7 @@ export default DetailLayout = ({ route, navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.button,{backgroundColor:'#379237'}]}
                                     onPress={() => {
-                                        startSendLocation(0),
-                                        sendStatus('arrived')
+                                        action(1)
                                     }}
                                 >
                                     <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
@@ -398,17 +432,16 @@ export default DetailLayout = ({ route, navigation }) => {
                             >
                                 <View style={styles.viewText}>
                                     <Text style={styles.text}>
-                                        الذهاب
+                                        انتهيت
                                     </Text>
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.button,{backgroundColor:"#5BC0F8"}]}
+                                    style={[styles.button,,{backgroundColor:'#FF6D28'}]}
                                     onPress={() => {
-                                        startSendLocation(1),
-                                        sendStatus('started')
+                                        action(2)
                                     }}
                                 >
-                                    <Foundation name="map" size={30} color="#fff" />
+                                    <MaterialIcons name="done-all" size={30} color="#fff" />
                                 </TouchableOpacity>
                             </View>
                         </View>
