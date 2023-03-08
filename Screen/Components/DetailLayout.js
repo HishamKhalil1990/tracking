@@ -17,21 +17,18 @@ import * as TaskManager from 'expo-task-manager';
 
 const widowWidth = Dimensions.get('window').width;
 const viewWidth = 0.8*widowWidth;
-let intervalID;
 
-const BACKGROUND_FETCH_TASK = 'background-fetch';
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-    const now = Date.now();
-  
-    console.log(`Got background fetch call at date: ${new Date(now).toISOString()}`);
-    (async () => {
-        let location = await Location.getCurrentPositionAsync({});
-        const long = location.coords.longitude;
-        const lat = location.coords.latitude
-        console.log(long,lat)
-    })();
-    // Be sure to return the successful result type!
-    return BackgroundFetch.BackgroundFetchResult.NewData;
+const LOCATION_TRACKING = 'background-location-task';
+let isStarted = false
+
+TaskManager.defineTask(LOCATION_TRACKING, ({ data: { locations }, error }) => {
+    if (error) {
+      // check `error.message` for more details.
+      return;
+    }
+    const long = locations[0].coords.longitude;
+    const lat = locations[0].coords.latitude
+    console.log('Received new locations', {long,lat});
 });
 
 export default DetailLayout = ({ route, navigation }) => {
@@ -46,20 +43,6 @@ export default DetailLayout = ({ route, navigation }) => {
     const mapSwipeRef = useRef()
     const appState = useRef(AppState.currentState);
 
-    const registerBackgroundFetchAsync = async () => {
-        console.log('register')
-        return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-            minimumInterval: 30, // 5 minutes
-            stopOnTerminate: false, // android only,
-            startOnBoot: true, // android only
-        });
-    }
-
-    const unregisterBackgroundFetchAsync = async () => {
-        console.log('unregister')
-        return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
-    }
-
     useEffect(() => {
         const subscription = AppState.addEventListener('change', nextAppState => {
           if (
@@ -67,12 +50,9 @@ export default DetailLayout = ({ route, navigation }) => {
             nextAppState === 'active'
           ){
             console.log('App has come to the foreground!');
-            toggleFetchTask(true)
           }else{
             appState.current = nextAppState;
             console.log('AppState', appState.current);
-            clearInterval(intervalID)
-            intervalID = undefined
           }
         });
     
@@ -82,17 +62,18 @@ export default DetailLayout = ({ route, navigation }) => {
     }, []);
 
     const toggleFetchTask = async (status) => {
-        if (status) {
-          await unregisterBackgroundFetchAsync();
-        } else {
-          await registerBackgroundFetchAsync();
+        isStarted = await Location.hasStartedLocationUpdatesAsync(
+            LOCATION_TRACKING
+        );
+        if (status & isStarted) {
+            await Location.stopLocationUpdatesAsync(LOCATION_TRACKING)
+        } else if (!status & !isStarted) {
+            await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
+                accuracy: Location.Accuracy.Balanced,
+                timeInterval: 5000,
+                distanceInterval: 0,
+            });
         }
-        return checkStatusAsync();
-    };
-
-    const checkStatusAsync = async () => {
-        const isRegister = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
-        console.log(isRegister)
     };
 
     useEffect(() => {
@@ -107,28 +88,16 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
-            emptyInterval()
+            toggleFetchTask(true)
         }
     }, []);
 
     const startSendLocation = (index) => {
         swipeRef.current.scrollToIndex({index})
         if(index == 1){
-            if(!intervalID){
-                intervalID = setInterval(() => {
-                    (async () => {
-                        let location = await Location.getCurrentPositionAsync({});
-                        const long = location.coords.longitude;
-                        const lat = location.coords.latitude
-                        // console.log(long,lat)
-                    })();
-                },5000)
-            }
-        }else if(index == 0){
-            if(intervalID){
-                clearInterval(intervalID)
-                intervalID = undefined
-            }
+            toggleFetchTask(false)
+        }else if(index == 2){
+            toggleFetchTask(true)
         }
     }
 
@@ -160,20 +129,12 @@ export default DetailLayout = ({ route, navigation }) => {
                     swipeRef.current.scrollToIndex({index:1})
                     alert('الرحاء حفظ الوصول اولا')
                 }else if(stage == 'arrived'){
-                    emptyInterval(),
                     sendStatus('finished')
                     setStage('finished')
                 }
                 break;
             default:
                 break;
-        }
-    }
-
-    const emptyInterval = () => {
-        if(intervalID){
-            clearInterval(intervalID)
-            intervalID = undefined
         }
     }
 

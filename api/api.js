@@ -1,4 +1,5 @@
 import axios from "axios";
+import { cos } from "react-native-reanimated";
 const baseURL = "http://192.168.90.15:3333";
 
 const checkUser = async (username, password, odometer) => {
@@ -77,8 +78,13 @@ const send = async (token,status) => {
   });
 };
 
+const sendLocation = async(location) => {
+  console.log(location)
+}
+
 export default {
   checkUser,
   getOrders,
-  send
+  send,
+  sendLocation
 };
