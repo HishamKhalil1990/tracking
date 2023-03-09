@@ -19,6 +19,10 @@ const viewWidth = 0.8*widowWidth;
 
 const LOCATION_TRACKING = 'background-location-task';
 let isStarted = false
+let stage = ''
+let token;
+let tripName='';
+let orderNo = ''
 
 TaskManager.defineTask(LOCATION_TRACKING, ({ data: { locations }, error }) => {
     if (error) {
@@ -27,16 +31,16 @@ TaskManager.defineTask(LOCATION_TRACKING, ({ data: { locations }, error }) => {
     }
     const long = locations[0].coords.longitude;
     const lat = locations[0].coords.latitude
-    console.log('Received new locations', {long,lat});
+    api.sendLocation(token,{long,lat},tripName,orderNo)
+    .then(() => {})
+    .catch(() => {});
 });
 
 export default DetailLayout = ({ route, navigation }) => {
 
-    const [token, setToken] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [mapInd, setMapInd] = useState(0);
     const [url, setUrl] = useState()
-    const [stage, setStage] = useState('')
 
     const swipeRef = useRef()
     const mapSwipeRef = useRef()
@@ -49,6 +53,7 @@ export default DetailLayout = ({ route, navigation }) => {
             nextAppState === 'active'
           ){
             console.log('App has come to the foreground!');
+            toggleLocationTask(false)
           }else{
             appState.current = nextAppState;
             console.log('AppState', appState.current);
@@ -60,7 +65,7 @@ export default DetailLayout = ({ route, navigation }) => {
         };
     }, []);
 
-    const toggleFetchTask = async (status) => {
+    const toggleLocationTask = async (status) => {
         isStarted = await Location.hasStartedLocationUpdatesAsync(
             LOCATION_TRACKING
         );
@@ -69,17 +74,28 @@ export default DetailLayout = ({ route, navigation }) => {
         } else if (!status & !isStarted) {
             await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
                 accuracy: Location.Accuracy.Balanced,
-                timeInterval: 5000,
+                timeInterval: route.params.data.timeInterval? route.params.data.timeInterval : 5000,
                 distanceInterval: 0,
             });
         }
     };
 
+    const openAddressOnMap = async() => {
+        let location = await Location.getCurrentPositionAsync({});
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${location.coords.latitude},${location.coords.longitude}&destination=${route.params.data.destination.lat},${route.params.data.destination.long}&travelmode=car`
+        Linking.openURL(url);
+      };
+
     useEffect(() => {
+        orderNo = route.params.data.no
+        if(route.params.data.status == 'arrived'){
+            stage = route.params.data.status
+            tripName = route.params.data.tripName
+        }
         const checkStorage = async () => {
           let user = await AsyncStorage.getItem("user");
           user = JSON.parse(user);
-          setToken(user.token);
+          token = user.token;
         };
         checkStorage();
         (async () => {
@@ -87,34 +103,51 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
-            toggleFetchTask(true)
+            if(stage == 'started'){
+                api.send(token,'apported',tripName,orderNo)
+                .then(() => {})
+                .catch(() => {})
+            }else if(stage == 'arrived'){
+                route.params.editOrderData(stage,tripName,route.params.index)
+            }
+            toggleLocationTask(true)
+            isStarted = false
+            stage = ''
+            token;
+            tripName='';
+            orderNo = ''
         }
     }, []);
 
     const startSendLocation = (index) => {
         swipeRef.current.scrollToIndex({index})
         if(index == 1){
-            toggleFetchTask(false)
+            toggleLocationTask(false)
         }else if(index == 2){
-            toggleFetchTask(true)
+            toggleLocationTask(true)
         }
     }
 
     const action = (index) => {
         switch(index){
             case 0:
-                startSendLocation(1)
                 sendStatus('started')
-                setStage('started')
+                .then(() => {
+                    startSendLocation(1)
+                    openAddressOnMap()
+                    stage = 'started'
+                }).catch(() => {})
                 break;
             case 1:
                 if(stage == ''){
                     swipeRef.current.scrollToIndex({index:0})
                     alert('الرجاء بدء الذهاب اولا')
                 }else if(stage == 'started'){
-                    startSendLocation(2)
                     sendStatus('arrived')
-                    setStage('arrived')
+                    .then(() => {
+                        startSendLocation(2)
+                        stage = 'arrived'
+                    }).catch(() => {})
                 }else if(stage == 'arrived'){
                     swipeRef.current.scrollToIndex({index:2})
                     alert('تم حفظ الوصول سابقا')
@@ -126,10 +159,12 @@ export default DetailLayout = ({ route, navigation }) => {
                     alert('الرجاء بدء الذهاب اولا')
                 }else if(stage == 'started'){
                     swipeRef.current.scrollToIndex({index:1})
-                    alert('الرحاء حفظ الوصول اولا')
+                    alert('الرجاء حفظ الوصول اولا')
                 }else if(stage == 'arrived'){
                     sendStatus('finished')
-                    setStage('finished')
+                    .then(() => {
+                        stage = 'finished'
+                    }).catch(() => {})
                 }
                 break;
             default:
@@ -149,33 +184,48 @@ export default DetailLayout = ({ route, navigation }) => {
     }
 
     const sendStatus = async(status) => {
-        setIsLoading(true);
-        api
-        .send(token,status)
-        .then((results) => {
-            setIsLoading(false);
-            if (results.status == "success") {
-                alert(results.msg)
-                if(status == 'finished'){
-                    route.params.setOrderNo(route.params.index)
-                    navigation.goBack()
-                }
-            } else if (results.status == "unauthorized"){
-            AsyncStorage.clear()
-            alert(
-                "انتهت الجلسة الرجاء اعادة الدخول مرة اخرى"
-            );
-            navigation.replace('Auth')
+        return new Promise((resolve,reject) => {
+            const start = async () => {
+                setIsLoading(true);
+                api
+                .send(token,status,tripName,orderNo)
+                .then((results) => {
+                    setIsLoading(false);
+                    if (results.status == "success") {
+                        if(results.msg){
+                            alert(results.msg)
+                        }
+                        if(status == 'started'){
+                            tripName = results.tripName
+                        }else if(status == 'finished'){
+                            route.params.setOrderNo(route.params.index)
+                            navigation.goBack()
+                        }
+                        resolve()
+                    } else if (results.status == "unauthorized"){
+                        AsyncStorage.clear()
+                        alert(
+                            "انتهت الجلسة الرجاء اعادة الدخول مرة اخرى"
+                        );
+                        navigation.replace('Auth')
+                        reject()
+                    } else if (results.status == "failed"){
+                        alert(results.msg)
+                        reject()
+                    }
+                })
+                .catch((num) => {
+                    setIsLoading(false);
+                    if (num == 1) {
+                        alert("حدث خطا ما الرجاء المحاولة مرة اخرى");
+                    } else {
+                        alert("الرجاء التاكد من الاتصال بالانترنت");
+                    }
+                    reject()
+                });
             }
+            start()
         })
-        .catch((num) => {
-            setIsLoading(false);
-            if (num == 1) {
-            alert("حدث خطا ما الرجاء المحاولة مرة اخرى");
-            } else {
-            alert("الرجاء التاكد من الاتصال بالانترنت");
-            }
-        });
     }
 
     return (
@@ -261,7 +311,7 @@ export default DetailLayout = ({ route, navigation }) => {
                                 source={{uri:url}}
                                 onShouldStartLoadWithRequest={event => {
                                     if (event.url.match(/(goo\.gl\/maps)|(maps\.app\.goo\.gl)/) ) {
-                                        toggleFetchTask(false)
+                                        toggleLocationTask(false)
                                         Linking.openURL(event.url)
                                         if(swipeRef.current.getCurrentIndex() == 0){
                                             action(0)
@@ -316,9 +366,9 @@ export default DetailLayout = ({ route, navigation }) => {
                 >   
                     <SwiperFlatList
                         style={{height:140}}
-                        showPagination
+                        showPagination={true}
                         paginationActiveColor={theme.colors.general}
-                        index={0}
+                        index={route.params.data.status == 'arrived'? 2 : 0}
                         ref={swipeRef}
                     >
                         <View

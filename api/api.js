@@ -1,6 +1,5 @@
 import axios from "axios";
-import { cos } from "react-native-reanimated";
-const baseURL = "http://192.168.90.15:3333";
+const baseURL = "http://192.168.90.73:3333";
 
 const checkUser = async (username, password, odometer) => {
   let data = { username, password, odometer };
@@ -53,8 +52,12 @@ const getOrders = async (token) => {
   });
 };
 
-const send = async (token,status) => {
+const send = async (token,status,tripName,orderNo) => {
   return new Promise((resolve, reject) => {
+    const data = {
+      tripName,
+      orderNo
+    }
     try {
       axios({
         baseURL,
@@ -64,6 +67,7 @@ const send = async (token,status) => {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        data:JSON.stringify(data),
         timeout: 30000,
       })
         .then((response) => {
@@ -78,8 +82,35 @@ const send = async (token,status) => {
   });
 };
 
-const sendLocation = async(location) => {
-  console.log(location)
+const sendLocation = async(token,location,tripName,orderNo) => {
+  return new Promise((resolve, reject) => {
+    const data = {
+      tripName,
+      location,
+      orderNo
+    }
+    try {
+      axios({
+        baseURL,
+        method: "post",
+        url: `/location`,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        data:JSON.stringify(data),
+        timeout: 5000,
+      })
+        .then((response) => {
+          resolve();
+        })
+        .catch((error) => {
+          reject();
+        });
+    } catch (err) {
+      reject();
+    }
+  });
 }
 
 export default {

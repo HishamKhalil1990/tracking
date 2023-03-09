@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from "react-native"
 import theme from "../../utils/theme"
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
+export default CardLayout = ({ record, index, navigation, setOrderNo, editOrderData }) => {
 
     const [data,setData] = useState(record)
     
@@ -60,7 +60,7 @@ export default CardLayout = ({ record, index, navigation, setOrderNo }) => {
                 </View>
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => {navigation.navigate('detail',{data,index,setOrderNo})}}
+                    onPress={() => {navigation.navigate('detail',{data,index,setOrderNo,editOrderData})}}
                 >
                     <Text style={styles.btuText}>
                         <MaterialCommunityIcons name="page-next-outline" size={50} color="#fff" />
