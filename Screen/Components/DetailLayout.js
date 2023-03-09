@@ -406,7 +406,29 @@ export default DetailLayout = ({ route, navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.button,{backgroundColor:"#5BC0F8"}]}
                                     onPress={() => {
-                                        action(0,false)
+                                        if(stage == ''){
+                                            Alert.alert(
+                                                'بدء الرحلة',
+                                                'هل تريد الاستمرار ببدء الرحلة ؟',
+                                                [
+                                                  {
+                                                    text: 'الغاء',
+                                                    onPress: () => {
+                                                      return null;
+                                                    },
+                                                  },
+                                                  {
+                                                    text: 'استمرار',
+                                                    onPress: () => {
+                                                        action(0,false)
+                                                    },
+                                                  },
+                                                ],
+                                                {cancelable: false},
+                                            );
+                                        }else{
+                                            action(0,false)
+                                        }
                                     }}
                                 >
                                     <Foundation name="map" size={30} color="#fff" />
