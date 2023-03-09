@@ -104,7 +104,7 @@ export default DetailLayout = ({ route, navigation }) => {
         })();
         return () => {
             if(stage == 'started'){
-                api.send(token,'apported',tripName,orderNo)
+                api.send(token,'canceled',tripName,orderNo)
                 .then(() => {})
                 .catch(() => {})
             }else if(stage == 'arrived'){
