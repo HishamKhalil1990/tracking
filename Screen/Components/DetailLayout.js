@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions, AppState } from "react-native"
+import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions, AppState,Alert } from "react-native"
 import api from "../../api/api";
 import Loader from "./Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,18 +12,34 @@ import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import * as Linking from 'expo-linking'
 import { SwiperFlatList } from "react-native-swiper-flatlist"
+import * as TaskManager from 'expo-task-manager';
 
 const widowWidth = Dimensions.get('window').width;
 const viewWidth = 0.8*widowWidth;
-let intervalID;
-let counter = 1;
+
+const LOCATION_TRACKING = 'background-location-task';
+let isStarted = false
+let stage = ''
+let token;
+let tripName='';
+let orderNo = ''
+
+TaskManager.defineTask(LOCATION_TRACKING, ({ data: { locations }, error }) => {
+    if (error) {
+      // check `error.message` for more details.
+      return;
+    }
+    const long = locations[0].coords.longitude;
+    const lat = locations[0].coords.latitude
+    api.sendLocation(token,{long,lat},tripName,orderNo)
+    .then(() => {})
+    .catch(() => {});
+});
 
 export default DetailLayout = ({ route, navigation }) => {
 
-    const [token, setToken] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [mapInd, setMapInd] = useState(0);
-    const [orderNo, setOrderNo] = useState(route.params.data.no);
     const [url, setUrl] = useState()
 
     const swipeRef = useRef()
@@ -37,24 +53,49 @@ export default DetailLayout = ({ route, navigation }) => {
             nextAppState === 'active'
           ){
             console.log('App has come to the foreground!');
+            toggleLocationTask(false)
           }else{
             appState.current = nextAppState;
             console.log('AppState', appState.current);
-            clearInterval(intervalID)
-            intervalID = undefined
           }
         });
     
         return () => {
           subscription.remove();
         };
-      }, []);
+    }, []);
+
+    const toggleLocationTask = async (status) => {
+        isStarted = await Location.hasStartedLocationUpdatesAsync(
+            LOCATION_TRACKING
+        );
+        if (status & isStarted) {
+            await Location.stopLocationUpdatesAsync(LOCATION_TRACKING)
+        } else if (!status & !isStarted) {
+            await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
+                accuracy: Location.Accuracy.Balanced,
+                timeInterval: route.params.data.timeInterval? route.params.data.timeInterval : 5000,
+                distanceInterval: 0,
+            });
+        }
+    };
+
+    const openAddressOnMap = async() => {
+        let location = await Location.getCurrentPositionAsync({});
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${location.coords.latitude},${location.coords.longitude}&destination=${route.params.data.destination.lat},${route.params.data.destination.long}&travelmode=car`
+        Linking.openURL(url);
+      };
 
     useEffect(() => {
+        orderNo = route.params.data.no
+        if(route.params.data.status == 'arrived'){
+            stage = route.params.data.status
+            tripName = route.params.data.tripName
+        }
         const checkStorage = async () => {
           let user = await AsyncStorage.getItem("user");
           user = JSON.parse(user);
-          setToken(user.token);
+          token = user.token;
         };
         checkStorage();
         (async () => {
@@ -62,35 +103,84 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
-            emptyInterval()
+            if(stage == 'started'){
+                api.send(token,'canceled',tripName,orderNo)
+                .then(() => {})
+                .catch(() => {})
+            }else if(stage == 'arrived'){
+                route.params.editOrderData(stage,tripName,route.params.index)
+            }
+            toggleLocationTask(true)
+            isStarted = false
+            stage = ''
+            token;
+            tripName='';
+            orderNo = ''
         }
     }, []);
 
-    const startSendLocation = (index) => {
-        swipeRef.current.scrollToIndex({index})
-        if(index == 1){
-            if(!intervalID){
-                intervalID = setInterval(() => {
-                    (async () => {
-                        let location = await Location.getCurrentPositionAsync({});
-                        const long = location.coords.longitude;
-                        const lat = location.coords.latitude
-                        // console.log(long,lat)
-                    })();
-                },5000)
-            }
-        }else if(index == 0){
-            if(intervalID){
-                clearInterval(intervalID)
-                intervalID = undefined
-            }
+    const startSendLocation = (index,toIndex) => {
+        swipeRef.current.scrollToIndex({index:toIndex})
+        if(index == 0){
+            toggleLocationTask(false)
+        }else if(index == 1){
+            toggleLocationTask(true)
         }
     }
 
-    const emptyInterval = () => {
-        if(intervalID){
-            clearInterval(intervalID)
-            intervalID = undefined
+    const action = (index,skip) => {
+        switch(index){
+            case 0:
+                if(stage == ''){
+                    sendStatus('started')
+                    .then(() => {
+                        startSendLocation(index,1)
+                        if(!skip){
+                            openAddressOnMap()
+                        }
+                        stage = 'started'
+                    }).catch(() => {})
+                }else if(stage == 'started'){
+                    swipeRef.current.scrollToIndex({index:1})
+                    if(!skip){
+                        openAddressOnMap()
+                    }
+                }else if(stage == 'arrived'){
+                    swipeRef.current.scrollToIndex({index:2})
+                    alert('الرحلة تم القيام بها وحفظ الوصول مسبقا')
+                }
+                break;
+            case 1:
+                if(stage == ''){
+                    swipeRef.current.scrollToIndex({index:0})
+                    alert('الرجاء بدء الذهاب اولا')
+                }else if(stage == 'started'){
+                    sendStatus('arrived')
+                    .then(() => {
+                        startSendLocation(index,2)
+                        stage = 'arrived'
+                    }).catch(() => {})
+                }else if(stage == 'arrived'){
+                    swipeRef.current.scrollToIndex({index:2})
+                    alert('تم حفظ الوصول سابقا')
+                }
+                break;
+            case 2:
+                if(stage == ''){
+                    swipeRef.current.scrollToIndex({index:0})
+                    alert('الرجاء بدء الذهاب اولا')
+                }else if(stage == 'started'){
+                    swipeRef.current.scrollToIndex({index:1})
+                    alert('الرجاء حفظ الوصول اولا')
+                }else if(stage == 'arrived'){
+                    sendStatus('finished')
+                    .then(() => {
+                        stage = 'finished'
+                    }).catch(() => {})
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -106,33 +196,48 @@ export default DetailLayout = ({ route, navigation }) => {
     }
 
     const sendStatus = async(status) => {
-        setIsLoading(true);
-        api
-        .send(token,status)
-        .then((results) => {
-            setIsLoading(false);
-            if (results.status == "success") {
-                alert(results.msg)
-                if(status == 'finished'){
-                    route.params.setOrderNo(route.params.index)
-                    navigation.goBack()
-                }
-            } else if (results.status == "unauthorized"){
-            AsyncStorage.clear()
-            alert(
-                "انتهت الجلسة الرجاء اعادة الدخول مرة اخرى"
-            );
-            navigation.replace('Auth')
+        return new Promise((resolve,reject) => {
+            const start = async () => {
+                setIsLoading(true);
+                api
+                .send(token,status,tripName,orderNo)
+                .then((results) => {
+                    setIsLoading(false);
+                    if (results.status == "success") {
+                        if(results.msg){
+                            alert(results.msg)
+                        }
+                        if(status == 'started'){
+                            tripName = results.tripName
+                        }else if(status == 'finished'){
+                            route.params.setOrderNo(route.params.index)
+                            navigation.goBack()
+                        }
+                        resolve()
+                    } else if (results.status == "unauthorized"){
+                        AsyncStorage.clear()
+                        alert(
+                            "انتهت الجلسة الرجاء اعادة الدخول مرة اخرى"
+                        );
+                        navigation.replace('Auth')
+                        reject()
+                    } else if (results.status == "failed"){
+                        alert(results.msg)
+                        reject()
+                    }
+                })
+                .catch((num) => {
+                    setIsLoading(false);
+                    if (num == 1) {
+                        alert("حدث خطا ما الرجاء المحاولة مرة اخرى");
+                    } else {
+                        alert("الرجاء التاكد من الاتصال بالانترنت");
+                    }
+                    reject()
+                });
             }
+            start()
         })
-        .catch((num) => {
-            setIsLoading(false);
-            if (num == 1) {
-            alert("حدث خطا ما الرجاء المحاولة مرة اخرى");
-            } else {
-            alert("الرجاء التاكد من الاتصال بالانترنت");
-            }
-        });
     }
 
     return (
@@ -157,12 +262,12 @@ export default DetailLayout = ({ route, navigation }) => {
                         disableGesture={true}
                     >
                         <View
-                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',marginTop:25,}}
+                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',borderTopColor:'#EEEEEE',borderTopWidth:1}}
                         >
                             <View
                                 style={{
                                     height:'100%',
-                                    width:viewWidth,
+                                    width:widowWidth,
                                     backgroundColor:'#fff',
                                     shadowColor: "#000",
                                     shadowOffset: {
@@ -173,7 +278,7 @@ export default DetailLayout = ({ route, navigation }) => {
                                     shadowRadius: 3.84,
 
                                     elevation: 5,
-                                    borderRadius:10
+                                    //borderRadius:10
                                 }}
                             >
                                 <View style={styles.detail}>
@@ -218,12 +323,14 @@ export default DetailLayout = ({ route, navigation }) => {
                                 source={{uri:url}}
                                 onShouldStartLoadWithRequest={event => {
                                     if (event.url.match(/(goo\.gl\/maps)|(maps\.app\.goo\.gl)/) ) {
-                                        if(swipeRef.current.getCurrentIndex() == 2){
-                                            startSendLocation(1),
-                                            sendStatus('started')
+                                        if(stage == ''){
+                                            toggleLocationTask(false)
+                                            Linking.openURL(event.url)
+                                        }else if(stage == 'started'){
+                                            Linking.openURL(event.url)
                                         }
-                                       Linking.openURL(event.url)
-                                       return false
+                                        action(0,true)
+                                        return false
                                     }
                                     return true
                                               
@@ -273,9 +380,9 @@ export default DetailLayout = ({ route, navigation }) => {
                 >   
                     <SwiperFlatList
                         style={{height:140}}
-                        showPagination
+                        showPagination={true}
                         paginationActiveColor={theme.colors.general}
-                        index={2}
+                        index={route.params.data.status == 'arrived'? 2 : 0}
                         ref={swipeRef}
                     >
                         <View
@@ -293,17 +400,16 @@ export default DetailLayout = ({ route, navigation }) => {
                             >
                                 <View style={styles.viewText}>
                                     <Text style={styles.text}>
-                                        انتهيت
+                                        الذهاب
                                     </Text>
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.button,,{backgroundColor:'#FF6D28'}]}
+                                    style={[styles.button,{backgroundColor:"#5BC0F8"}]}
                                     onPress={() => {
-                                        emptyInterval(),
-                                        sendStatus('finished')
+                                        action(0,false)
                                     }}
                                 >
-                                    <MaterialIcons name="done-all" size={30} color="#fff" />
+                                    <Foundation name="map" size={30} color="#fff" />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -328,8 +434,29 @@ export default DetailLayout = ({ route, navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.button,{backgroundColor:'#379237'}]}
                                     onPress={() => {
-                                        startSendLocation(0),
-                                        sendStatus('arrived')
+                                        if(stage == 'started'){
+                                            Alert.alert(
+                                                'حفظ الوصول',
+                                                'هل تريد الاستمرار بحفظ الوصول ؟',
+                                                [
+                                                  {
+                                                    text: 'الغاء',
+                                                    onPress: () => {
+                                                      return null;
+                                                    },
+                                                  },
+                                                  {
+                                                    text: 'استمرار',
+                                                    onPress: () => {
+                                                        action(1,false)
+                                                    },
+                                                  },
+                                                ],
+                                                {cancelable: false},
+                                            );
+                                        }else{
+                                            action(1,false)
+                                        }
                                     }}
                                 >
                                     <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
@@ -351,17 +478,38 @@ export default DetailLayout = ({ route, navigation }) => {
                             >
                                 <View style={styles.viewText}>
                                     <Text style={styles.text}>
-                                        الذهاب
+                                        انتهيت
                                     </Text>
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.button,{backgroundColor:"#5BC0F8"}]}
+                                    style={[styles.button,,{backgroundColor:'#FF6D28'}]}
                                     onPress={() => {
-                                        startSendLocation(1),
-                                        sendStatus('started')
+                                        if(stage == 'aarived'){
+                                            Alert.alert(
+                                                'حفظ الانتهاء',
+                                                'هل تريد الاستمرار بحفظ الانتهاء ؟',
+                                                [
+                                                  {
+                                                    text: 'الغاء',
+                                                    onPress: () => {
+                                                      return null;
+                                                    },
+                                                  },
+                                                  {
+                                                    text: 'استمرار',
+                                                    onPress: () => {
+                                                        action(2,false)
+                                                    },
+                                                  },
+                                                ],
+                                                {cancelable: false},
+                                            );
+                                        }else{
+                                            action(2,false)
+                                        }
                                     }}
                                 >
-                                    <Foundation name="map" size={30} color="#fff" />
+                                    <MaterialIcons name="done-all" size={30} color="#fff" />
                                 </TouchableOpacity>
                             </View>
                         </View>

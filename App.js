@@ -28,10 +28,14 @@ const App = () => {
   useEffect(() => {
     (async () => {
       
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const { status } = await Location.requestBackgroundPermissionsAsync()
+        if (status !== 'granted') {
+          alert('Permission to access location was denied');
+        }
+      }else{
         alert('Permission to access location was denied');
-        return;
       }
     })();
   }, []);

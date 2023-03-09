@@ -30,6 +30,17 @@ const HomeScreen = ({ navigation, route }) => {
     }
   }
 
+  const editOrderData = (status,tripName,index) => {
+    const newData = data.map((order,ind) => {
+      if(ind == index){
+        order.status = status
+        order.tripName = tripName
+      }
+      return order
+    })
+    setData(newData)
+  }
+
   const getUserOrders = async (token) => {
     api
       .getOrders(token)
@@ -88,6 +99,7 @@ const HomeScreen = ({ navigation, route }) => {
         getUserOrders={getUserOrders}
         navigation={navigation}
         setOrderNo={setOrderNo}
+        editOrderData={editOrderData}
       />
     );
   };
