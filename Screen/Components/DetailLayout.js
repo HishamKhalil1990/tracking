@@ -250,12 +250,12 @@ export default DetailLayout = ({ route, navigation }) => {
                         disableGesture={true}
                     >
                         <View
-                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',marginTop:25,}}
+                            style={{width:widowWidth,flex:1,justifyContent:'center',alignItems:'center',borderTopColor:'#EEEEEE',borderTopWidth:1}}
                         >
                             <View
                                 style={{
                                     height:'100%',
-                                    width:viewWidth,
+                                    width:widowWidth,
                                     backgroundColor:'#fff',
                                     shadowColor: "#000",
                                     shadowOffset: {
@@ -266,7 +266,7 @@ export default DetailLayout = ({ route, navigation }) => {
                                     shadowRadius: 3.84,
 
                                     elevation: 5,
-                                    borderRadius:10
+                                    //borderRadius:10
                                 }}
                             >
                                 <View style={styles.detail}>
