@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions, AppState } from "react-native"
+import { Text, View, StyleSheet, TouchableOpacity, Platform, TextInput, ScrollView, Dimensions, AppState,Alert } from "react-native"
 import api from "../../api/api";
 import Loader from "./Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -119,24 +119,36 @@ export default DetailLayout = ({ route, navigation }) => {
         }
     }, []);
 
-    const startSendLocation = (index) => {
-        swipeRef.current.scrollToIndex({index})
-        if(index == 1){
+    const startSendLocation = (index,toIndex) => {
+        swipeRef.current.scrollToIndex({index:toIndex})
+        if(index == 0){
             toggleLocationTask(false)
-        }else if(index == 2){
+        }else if(index == 1){
             toggleLocationTask(true)
         }
     }
 
-    const action = (index) => {
+    const action = (index,skip) => {
         switch(index){
             case 0:
-                sendStatus('started')
-                .then(() => {
-                    startSendLocation(1)
-                    openAddressOnMap()
-                    stage = 'started'
-                }).catch(() => {})
+                if(stage == ''){
+                    sendStatus('started')
+                    .then(() => {
+                        startSendLocation(index,1)
+                        if(!skip){
+                            openAddressOnMap()
+                        }
+                        stage = 'started'
+                    }).catch(() => {})
+                }else if(stage == 'started'){
+                    swipeRef.current.scrollToIndex({index:1})
+                    if(!skip){
+                        openAddressOnMap()
+                    }
+                }else if(stage == 'arrived'){
+                    swipeRef.current.scrollToIndex({index:2})
+                    alert('الرحلة تم القيام بها وحفظ الوصول مسبقا')
+                }
                 break;
             case 1:
                 if(stage == ''){
@@ -145,7 +157,7 @@ export default DetailLayout = ({ route, navigation }) => {
                 }else if(stage == 'started'){
                     sendStatus('arrived')
                     .then(() => {
-                        startSendLocation(2)
+                        startSendLocation(index,2)
                         stage = 'arrived'
                     }).catch(() => {})
                 }else if(stage == 'arrived'){
@@ -311,11 +323,13 @@ export default DetailLayout = ({ route, navigation }) => {
                                 source={{uri:url}}
                                 onShouldStartLoadWithRequest={event => {
                                     if (event.url.match(/(goo\.gl\/maps)|(maps\.app\.goo\.gl)/) ) {
-                                        toggleLocationTask(false)
-                                        Linking.openURL(event.url)
-                                        if(swipeRef.current.getCurrentIndex() == 0){
-                                            action(0)
+                                        if(stage == ''){
+                                            toggleLocationTask(false)
+                                            Linking.openURL(event.url)
+                                        }else if(stage == 'started'){
+                                            Linking.openURL(event.url)
                                         }
+                                        action(0,true)
                                         return false
                                     }
                                     return true
@@ -392,7 +406,7 @@ export default DetailLayout = ({ route, navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.button,{backgroundColor:"#5BC0F8"}]}
                                     onPress={() => {
-                                        action(0)
+                                        action(0,false)
                                     }}
                                 >
                                     <Foundation name="map" size={30} color="#fff" />
@@ -420,7 +434,29 @@ export default DetailLayout = ({ route, navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.button,{backgroundColor:'#379237'}]}
                                     onPress={() => {
-                                        action(1)
+                                        if(stage == 'started'){
+                                            Alert.alert(
+                                                'حفظ الوصول',
+                                                'هل تريد الاستمرار بحفظ الوصول ؟',
+                                                [
+                                                  {
+                                                    text: 'الغاء',
+                                                    onPress: () => {
+                                                      return null;
+                                                    },
+                                                  },
+                                                  {
+                                                    text: 'استمرار',
+                                                    onPress: () => {
+                                                        action(1,false)
+                                                    },
+                                                  },
+                                                ],
+                                                {cancelable: false},
+                                            );
+                                        }else{
+                                            action(1,false)
+                                        }
                                     }}
                                 >
                                     <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
@@ -448,7 +484,29 @@ export default DetailLayout = ({ route, navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.button,,{backgroundColor:'#FF6D28'}]}
                                     onPress={() => {
-                                        action(2)
+                                        if(stage == 'aarived'){
+                                            Alert.alert(
+                                                'حفظ الانتهاء',
+                                                'هل تريد الاستمرار بحفظ الانتهاء ؟',
+                                                [
+                                                  {
+                                                    text: 'الغاء',
+                                                    onPress: () => {
+                                                      return null;
+                                                    },
+                                                  },
+                                                  {
+                                                    text: 'استمرار',
+                                                    onPress: () => {
+                                                        action(2,false)
+                                                    },
+                                                  },
+                                                ],
+                                                {cancelable: false},
+                                            );
+                                        }else{
+                                            action(2,false)
+                                        }
                                     }}
                                 >
                                     <MaterialIcons name="done-all" size={30} color="#fff" />
