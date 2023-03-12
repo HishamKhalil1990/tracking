@@ -96,8 +96,6 @@ export default DetailLayout = ({ route, navigation }) => {
             stage = route.params.data.status
             tripName = route.params.data.tripName
             setAllowPhone(true)
-        }else{
-            stage = ''
         }
         const checkStorage = async () => {
           let user = await AsyncStorage.getItem("user");
@@ -125,7 +123,7 @@ export default DetailLayout = ({ route, navigation }) => {
                     .then(() => {})
                     .catch(() => {})
                 }else if(stage == 'arrived'){
-                    route.params.editOrderData(stage,tripName,route.params.index)
+                    route.params.editOrderData(stage,tripName,route.params.data.id)
                 }
             }
             start()
@@ -234,7 +232,7 @@ export default DetailLayout = ({ route, navigation }) => {
                         if(status == 'started'){
                             tripName = results.tripName
                         }else if(status == 'finished'){
-                            route.params.setOrderNo(route.params.index)
+                            route.params.setOrderNo(route.params.data.id)
                             navigation.goBack()
                         }
                         resolve()
