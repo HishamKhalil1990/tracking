@@ -22,9 +22,10 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders, navigatio
     };
 
     const deleteItem = (itemId) => {
-        let newData = [...allData];
-        newData = newData.filter(item => item.id !== itemId);
-        setAllData(newData);
+        setOrderNo(itemId)
+        // let newData = [...allData];
+        // newData = newData.filter(item => item.id !== itemId);
+        // setAllData(newData);
       };
 
     const call = async(item) => {
