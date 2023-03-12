@@ -103,19 +103,27 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
-            if(stage == 'started'){
-                api.send(token,'canceled',tripName,orderNo)
-                .then(() => {})
-                .catch(() => {})
-            }else if(stage == 'arrived'){
-                route.params.editOrderData(stage,tripName,route.params.index)
+            const start = async() => {
+                let location = await Location.getCurrentPositionAsync({});
+                const data = {
+                    long:location.coords.longitude,
+                    lat:location.coords.latitude
+                }
+                if(stage == 'started'){
+                    api.send(token,'canceled',tripName,orderNo,data)
+                    .then(() => {})
+                    .catch(() => {})
+                }else if(stage == 'arrived'){
+                    route.params.editOrderData(stage,tripName,route.params.index)
+                }
+                toggleLocationTask(true)
+                isStarted = false
+                stage = ''
+                token;
+                tripName='';
+                orderNo = ''
             }
-            toggleLocationTask(true)
-            isStarted = false
-            stage = ''
-            token;
-            tripName='';
-            orderNo = ''
+            start()
         }
     }, []);
 
@@ -199,8 +207,13 @@ export default DetailLayout = ({ route, navigation }) => {
         return new Promise((resolve,reject) => {
             const start = async () => {
                 setIsLoading(true);
+                let location = await Location.getCurrentPositionAsync({});
+                const data = {
+                    long:location.coords.longitude,
+                    lat:location.coords.latitude
+                }
                 api
-                .send(token,status,tripName,orderNo)
+                .send(token,status,tripName,orderNo,data)
                 .then((results) => {
                     setIsLoading(false);
                     if (results.status == "success") {

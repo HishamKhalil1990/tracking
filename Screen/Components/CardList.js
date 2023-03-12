@@ -5,6 +5,7 @@ import CardLayout from "./CardLayout"
 import { Dimensions, RefreshControl } from "react-native"
 import { Feather } from '@expo/vector-icons'; 
 import { AntDesign } from '@expo/vector-icons';
+import * as Linking from 'expo-linking'
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -27,7 +28,8 @@ export default CardList = ({ data, token, setIsLoading, getUserOrders, navigatio
       };
 
     const call = async(item) => {
-        alert('called')
+        const url = `tel://${item.phone}`
+        Linking.openURL(url)
     }
 
     const QuickActions = (index, item) => {
