@@ -13,7 +13,8 @@ import * as Location from 'expo-location';
 import * as Linking from 'expo-linking'
 import { SwiperFlatList } from "react-native-swiper-flatlist"
 import * as TaskManager from 'expo-task-manager';
-import { Feather } from '@expo/vector-icons'; 
+import { Feather } from '@expo/vector-icons';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'; 
 
 const widowWidth = Dimensions.get('window').width;
 const viewWidth = 0.8*widowWidth;
@@ -54,11 +55,11 @@ export default DetailLayout = ({ route, navigation }) => {
             appState.current.match(/inactive|background/) &&
             nextAppState === 'active'
           ){
-            console.log('App has come to the foreground!');
+            // console.log('App has come to the foreground!');
             toggleLocationTask(false)
           }else{
             appState.current = nextAppState;
-            console.log('AppState', appState.current);
+            // console.log('AppState', appState.current);
           }
         });
     
@@ -89,11 +90,14 @@ export default DetailLayout = ({ route, navigation }) => {
       };
 
     useEffect(() => {
+        activateKeepAwakeAsync()
         orderNo = route.params.data.no
         if(route.params.data.status == 'arrived'){
             stage = route.params.data.status
             tripName = route.params.data.tripName
             setAllowPhone(true)
+        }else{
+            stage = ''
         }
         const checkStorage = async () => {
           let user = await AsyncStorage.getItem("user");
@@ -106,20 +110,18 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
-            isStarted = false
-            stage = ''
-            token;
-            tripName='';
-            orderNo = ''
             toggleLocationTask(true)
+            deactivateKeepAwake()
             const start = async() => {
-                let location = await Location.getCurrentPositionAsync({});
-                const data = {
-                    long:location.coords.longitude,
-                    lat:location.coords.latitude
-                }
+                const name = tripName
+                const no = orderNo
                 if(stage == 'started'){
-                    api.send(token,'canceled',tripName,orderNo,data)
+                    let location = await Location.getCurrentPositionAsync({});
+                    const data = {
+                        long:location.coords.longitude,
+                        lat:location.coords.latitude
+                    }
+                    api.send(token,'canceled',name,no,data)
                     .then(() => {})
                     .catch(() => {})
                 }else if(stage == 'arrived'){
@@ -127,6 +129,11 @@ export default DetailLayout = ({ route, navigation }) => {
                 }
             }
             start()
+            isStarted = false
+            token;
+            tripName='';
+            orderNo = ''
+            stage = ''
         }
     }, []);
 
