@@ -106,6 +106,12 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
+            isStarted = false
+            stage = ''
+            token;
+            tripName='';
+            orderNo = ''
+            toggleLocationTask(true)
             const start = async() => {
                 let location = await Location.getCurrentPositionAsync({});
                 const data = {
@@ -119,12 +125,6 @@ export default DetailLayout = ({ route, navigation }) => {
                 }else if(stage == 'arrived'){
                     route.params.editOrderData(stage,tripName,route.params.index)
                 }
-                toggleLocationTask(true)
-                isStarted = false
-                stage = ''
-                token;
-                tripName='';
-                orderNo = ''
             }
             start()
         }
