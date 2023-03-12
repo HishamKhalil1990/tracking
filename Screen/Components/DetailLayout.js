@@ -13,6 +13,7 @@ import * as Location from 'expo-location';
 import * as Linking from 'expo-linking'
 import { SwiperFlatList } from "react-native-swiper-flatlist"
 import * as TaskManager from 'expo-task-manager';
+import { Feather } from '@expo/vector-icons'; 
 
 const widowWidth = Dimensions.get('window').width;
 const viewWidth = 0.8*widowWidth;
@@ -41,6 +42,7 @@ export default DetailLayout = ({ route, navigation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [mapInd, setMapInd] = useState(0);
     const [url, setUrl] = useState()
+    const [allowPhone, setAllowPhone] = useState(false)
 
     const swipeRef = useRef()
     const mapSwipeRef = useRef()
@@ -91,6 +93,7 @@ export default DetailLayout = ({ route, navigation }) => {
         if(route.params.data.status == 'arrived'){
             stage = route.params.data.status
             tripName = route.params.data.tripName
+            setAllowPhone(true)
         }
         const checkStorage = async () => {
           let user = await AsyncStorage.getItem("user");
@@ -103,19 +106,27 @@ export default DetailLayout = ({ route, navigation }) => {
             setUrl(`https://www.google.es/maps/dir/'${location.coords.latitude},${location.coords.longitude}'/'${route.params.data.destination.lat},${route.params.data.destination.long}'`)
         })();
         return () => {
-            if(stage == 'started'){
-                api.send(token,'canceled',tripName,orderNo)
-                .then(() => {})
-                .catch(() => {})
-            }else if(stage == 'arrived'){
-                route.params.editOrderData(stage,tripName,route.params.index)
+            const start = async() => {
+                let location = await Location.getCurrentPositionAsync({});
+                const data = {
+                    long:location.coords.longitude,
+                    lat:location.coords.latitude
+                }
+                if(stage == 'started'){
+                    api.send(token,'canceled',tripName,orderNo,data)
+                    .then(() => {})
+                    .catch(() => {})
+                }else if(stage == 'arrived'){
+                    route.params.editOrderData(stage,tripName,route.params.index)
+                }
+                toggleLocationTask(true)
+                isStarted = false
+                stage = ''
+                token;
+                tripName='';
+                orderNo = ''
             }
-            toggleLocationTask(true)
-            isStarted = false
-            stage = ''
-            token;
-            tripName='';
-            orderNo = ''
+            start()
         }
     }, []);
 
@@ -157,8 +168,9 @@ export default DetailLayout = ({ route, navigation }) => {
                 }else if(stage == 'started'){
                     sendStatus('arrived')
                     .then(() => {
-                        startSendLocation(index,2)
+                        startSendLocation(index,1)
                         stage = 'arrived'
+                        setAllowPhone(true)
                     }).catch(() => {})
                 }else if(stage == 'arrived'){
                     swipeRef.current.scrollToIndex({index:2})
@@ -199,8 +211,13 @@ export default DetailLayout = ({ route, navigation }) => {
         return new Promise((resolve,reject) => {
             const start = async () => {
                 setIsLoading(true);
+                let location = await Location.getCurrentPositionAsync({});
+                const data = {
+                    long:location.coords.longitude,
+                    lat:location.coords.latitude
+                }
                 api
-                .send(token,status,tripName,orderNo)
+                .send(token,status,tripName,orderNo,data)
                 .then((results) => {
                     setIsLoading(false);
                     if (results.status == "success") {
@@ -448,41 +465,71 @@ export default DetailLayout = ({ route, navigation }) => {
                                     backgroundColor: 'white',
                                 }}
                             >
-                                <View style={styles.viewText}>
-                                    <Text style={styles.text}>
-                                        وصلت
-                                    </Text>
-                                </View>
-                                <TouchableOpacity
-                                    style={[styles.button,{backgroundColor:'#379237'}]}
-                                    onPress={() => {
-                                        if(stage == 'started'){
-                                            Alert.alert(
-                                                'حفظ الوصول',
-                                                'هل تريد الاستمرار بحفظ الوصول ؟',
-                                                [
-                                                  {
-                                                    text: 'الغاء',
-                                                    onPress: () => {
-                                                      return null;
-                                                    },
-                                                  },
-                                                  {
-                                                    text: 'استمرار',
-                                                    onPress: () => {
-                                                        action(1,false)
-                                                    },
-                                                  },
-                                                ],
-                                                {cancelable: false},
-                                            );
-                                        }else{
-                                            action(1,false)
-                                        }
-                                    }}
-                                >
-                                    <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
-                                </TouchableOpacity>
+                                {!allowPhone?
+                                    <>
+                                        <View style={styles.viewText}>
+                                            <Text style={styles.text}>
+                                                وصلت
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={[styles.button,{backgroundColor:'#379237'}]}
+                                            onPress={() => {
+                                                if(stage == 'started'){
+                                                    Alert.alert(
+                                                        'حفظ الوصول',
+                                                        'هل تريد الاستمرار بحفظ الوصول ؟',
+                                                        [
+                                                        {
+                                                            text: 'الغاء',
+                                                            onPress: () => {
+                                                            return null;
+                                                            },
+                                                        },
+                                                        {
+                                                            text: 'استمرار',
+                                                            onPress: () => {
+                                                                action(1,false)
+                                                            },
+                                                        },
+                                                        ],
+                                                        {cancelable: false},
+                                                    );
+                                                }else{
+                                                    action(1,false)
+                                                }
+                                            }}
+                                        >
+                                            <MaterialCommunityIcons name="map-marker-check" size={30} color="#fff" />
+                                        </TouchableOpacity>
+                                    </>
+                                :
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.button,{borderLeftColor:"#5BC0F8",borderLeftWidth:2}]}
+                                                onPress={() => {
+                                                    swipeRef.current.scrollToIndex({index:2})
+                                                }}
+                                            >
+                                                <Feather name="x" size={24} color="#5BC0F8" />
+                                            </TouchableOpacity>
+                                            <View style={styles.viewText2}>
+                                                <Text style={styles.text}>
+                                                    اتصال
+                                                </Text>
+                                            </View>
+                                            <TouchableOpacity
+                                                style={[styles.button,{backgroundColor:'#379237'}]}
+                                                onPress={() => {
+                                                    swipeRef.current.scrollToIndex({index:2})
+                                                    const url = `tel://${route.params.data.phone}`
+                                                    Linking.openURL(url)
+                                                }}
+                                            >
+                                                <Feather name="phone-call" size={24} color="#fff" />
+                                            </TouchableOpacity>
+                                        </>
+                                }
                             </View>
                         </View>
                         <View
@@ -545,6 +592,14 @@ export default DetailLayout = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     viewText:{
         width:'75%',
+        height:70,
+        flex: 1,
+        flexDirection:'row-reverse',
+        alignItems: "center",
+        justifyContent:'center',
+    },
+    viewText2:{
+        width:'50%',
         height:70,
         flex: 1,
         flexDirection:'row-reverse',

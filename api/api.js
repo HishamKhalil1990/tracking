@@ -1,5 +1,5 @@
 import axios from "axios";
-const baseURL = "http://192.168.90.73:3333";
+const baseURL = "http://localhost:3333";
 
 const checkUser = async (username, password, odometer) => {
   let data = { username, password, odometer };
@@ -52,11 +52,12 @@ const getOrders = async (token) => {
   });
 };
 
-const send = async (token,status,tripName,orderNo) => {
+const send = async (token,status,tripName,orderNo,location) => {
   return new Promise((resolve, reject) => {
     const data = {
       tripName,
-      orderNo
+      orderNo,
+      location
     }
     try {
       axios({
