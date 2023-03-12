@@ -38,7 +38,7 @@ const getOrders = async (token) => {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        timeout: 30000,
+        timeout: 10000,
       })
         .then((response) => {
           resolve(response.data);
@@ -69,7 +69,7 @@ const send = async (token,status,tripName,orderNo,location) => {
           "Content-Type": "application/json",
         },
         data:JSON.stringify(data),
-        timeout: 30000,
+        timeout: 10000,
       })
         .then((response) => {
           resolve(response.data);

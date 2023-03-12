@@ -22,8 +22,8 @@ const HomeScreen = ({ navigation, route }) => {
 
   const removeOrderNo = (index) => {
     if(orderNo != -1){
-      const newData = data.filter((order,ind) => {
-        return ind != index
+      const newData = data.filter((order) => {
+        return order.id != index
       })
       setOrderNo(-1)
       setData(newData)
@@ -31,8 +31,8 @@ const HomeScreen = ({ navigation, route }) => {
   }
 
   const editOrderData = (status,tripName,index) => {
-    const newData = data.map((order,ind) => {
-      if(ind == index){
+    const newData = data.map((order) => {
+      if(order.id == index){
         order.status = status
         order.tripName = tripName
       }
